@@ -1,0 +1,50 @@
+services:
+  app:
+    build: .
+    container_name: octo-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://octo:octo@db:5432/octo
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  qdrant-db:
+    image: qdrant/qdrant:latest
+    restart: always
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    expose:
+      - 6333
+      - 6334
+      - 6335
+#    configs:
+#      - source: qdrant_config
+#        target: /qdrant/config/production.yaml
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+
+  db:
+    image: postgres:17-alpine
+    container_name: octo-db
+    environment:
+      POSTGRES_USER: octo
+      POSTGRES_PASSWORD: octo
+      POSTGRES_DB: octo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U octo -d octo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
