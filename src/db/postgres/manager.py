@@ -1,11 +1,10 @@
-import asyncio
 from typing import Any
 
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.api.schemas import InputMediaFile
-from src.db.postgres.init_db import postgres_async_session
 from src.db.postgres.models import UserPostgres, MediaFilePostgres
 from src.db.postgres.schemas import UserInfo, MediaFile
 from src.utils.annotations import StrUUID
@@ -13,10 +12,19 @@ from src.utils.logs import LoggerMixin
 
 
 class PostgresManager(LoggerMixin):
-    _limiter = asyncio.Semaphore(10)
+    """One short-lived session per statement, drawn from the app-scoped pool.
+
+    Concurrency is capped by the engine pool (POSTGRES_POOL_SIZE), not by a
+    semaphore of its own: an `asyncio.Semaphore` binds permanently to whichever
+    event loop first contends on it, which breaks any later `asyncio.run()` in
+    the same process.
+    """
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
+        self._session_factory = session_factory
 
     async def __exec(self, stmt, commit: bool) -> Any:
-        async with self._limiter, postgres_async_session() as session:
+        async with self._session_factory() as session:
             try:
                 response = await session.execute(stmt)
             except Exception as e:

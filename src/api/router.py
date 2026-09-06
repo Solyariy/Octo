@@ -2,17 +2,17 @@ import asyncio
 from pathlib import Path
 
 import aiofiles
-import aiohttp
 from fastapi import APIRouter, Response
-from fastapi.params import Depends
-from qdrant_client import AsyncQdrantClient
 from starlette import status
 
-from src.api.dependencies import get_current_user, get_aiohttp_client, get_qdrant_client
+from src.api.dependencies import (
+    AiohttpClientDep,
+    CurrentUserDep,
+    PostgresManagerDep,
+    QdrantManagerDep,
+)
 from src.api.schemas import InputMediaFile
-from src.db.postgres.manager import PostgresManager
-from src.db.postgres.schemas import UserInfo, MediaFile
-from src.db.qdrant.manager import QdrantManager
+from src.db.postgres.schemas import MediaFile
 from src.embedders.factory import get_embedding_manager
 from src.embedders.models import EmbeddersEnum
 from src.settings import main_settings
@@ -37,8 +37,8 @@ async def get_health():
 )
 async def post_save(
         data_all: list[InputMediaFile],
+        pg_manager: PostgresManagerDep,
 ) -> list[StrUUID]:
-    pg_manager = PostgresManager()
     media_files: list[MediaFile] = await pg_manager.insert_media_file_bulk(data_all)
     return [str(m.id) for m in media_files]
 
@@ -48,11 +48,11 @@ async def post_save(
     status_code=status.HTTP_200_OK
 )
 async def post_process_all(
-        user_info: UserInfo = Depends(get_current_user),
-        aiohttp_client: aiohttp.ClientSession = Depends(get_aiohttp_client),
-        qdrant_client: AsyncQdrantClient = Depends(get_qdrant_client)
+        user_info: CurrentUserDep,
+        pg_manager: PostgresManagerDep,
+        aiohttp_client: AiohttpClientDep,
+        qdrant_manager: QdrantManagerDep,
 ):
-    pg_manager = PostgresManager()
     unprocessed_data = await pg_manager.get_unprocessed_media_files(user_id=user_info.id)
     if not unprocessed_data:
         return Response(status_code=status.HTTP_200_OK)
@@ -74,7 +74,7 @@ async def post_process_all(
                 return ve
 
         video_embeddings = await asyncio.to_thread(one_, paths)
-    await QdrantManager(qdrant_client).upsert_vectors(
+    await qdrant_manager.upsert_vectors(
         embedder_info=EmbeddersEnum.COSMOS_EMBED1_448P,
         vectors=video_embeddings
     )
