@@ -12,13 +12,13 @@ class BaseEmbeddingManager(LoggerMixin, ABC):
     Use as a context manager so `unload()` always runs.
     """
 
-    def __init__(self, model_registry: EmbeddersEnum):
-        self.model_registry = model_registry
+    def __init__(self, embedder_info: EmbeddersEnum):
+        self.embedder_info = embedder_info
         self.model: Any | None = None
 
     @property
     def output_dim(self) -> int:
-        return self.model_registry.get_dim()
+        return self.embedder_info.get_dim()
 
     @abstractmethod
     def load_model(self) -> None:

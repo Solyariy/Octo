@@ -32,26 +32,6 @@ logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 
-#
-# main_logger = logging.getLogger("MainLogger")
-# main_logger.setLevel(logging.DEBUG)
-# main_logger.propagate = False
-#
-#
-# ch = logging.StreamHandler()
-# ch.setLevel(logging.DEBUG)
-# formatter = logging.Formatter(
-#     "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
-# )
-# ch.setFormatter(formatter)
-# main_logger.addHandler(ch)
-#
-#
-# logging.getLogger("uvicorn").setLevel(logging.WARNING)
-# logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
-# logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-
-
 def inject_traceback(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -113,7 +93,8 @@ class Logger:
             event + Logger._get_caller_name(increase_depth) + str(msg_location),
             log_id=get_log_id(),
             msg=msg,
-            **kwargs
+            **kwargs,
+            error=error
         )
 
     @staticmethod

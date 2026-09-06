@@ -6,7 +6,7 @@ import torch
 import transformers
 from transformers import AutoModel, AutoProcessor
 
-from src.embedders.base import BaseEmbeddingManager
+from src.embedders.managers.base import BaseEmbeddingManager
 from src.embedders.models import EmbeddersEnum
 from src.settings import main_settings
 from src.utils.models import pick_device
@@ -43,9 +43,9 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
     together with its processor.
     """
 
-    def __init__(self, model_registry: EmbeddersEnum):
-        super().__init__(model_registry)
+    def __init__(self, embedder_info: EmbeddersEnum):
         self.processor = None
+        super().__init__(embedder_info)
         self.device, self.dtype = pick_device()
 
     @property
@@ -61,7 +61,7 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
         require_supported_transformers()
         self.log_info(
             "Loading model",
-            model=self.model_registry.value,
+            model=self.embedder_info.value,
             device=str(self.device),
             dtype=str(self.dtype),
         )
@@ -69,12 +69,12 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
             trust_remote_code=True,
             cache_dir=main_settings.MODELS_PATH,
             token=main_settings.HF_AUTH_TOKEN,
-            **self.model_registry.get_config(),
+            **self.embedder_info.get_config(),
         )
-        self.model = AutoModel.from_pretrained(self.model_registry.value, **kwargs).to(
+        self.model = AutoModel.from_pretrained(self.embedder_info.value, **kwargs).to(
             self.device, dtype=self.dtype
         )
-        self.processor = AutoProcessor.from_pretrained(self.model_registry.value, **kwargs)
+        self.processor = AutoProcessor.from_pretrained(self.embedder_info.value, **kwargs)
 
     def encode_text(self, texts: list[str], **kwargs) -> np.ndarray:
         self.load_model()

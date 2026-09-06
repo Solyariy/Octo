@@ -1,4 +1,6 @@
 from typing import NewType, Annotated
+from uuid import UUID
+
 from pydantic import Field
 
 StrUUID = NewType("StrUUID", Annotated[str, Field(description="UUID in str view")])

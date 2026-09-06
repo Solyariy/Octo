@@ -1,6 +1,6 @@
-from src.embedders.base import BaseEmbeddingManager
-from src.embedders.cosmos_manager import CosmosEmbeddingManager
-from src.embedders.hf_manager import GeneralEmbeddingManager
+from src.embedders.managers.base import BaseEmbeddingManager
+from src.embedders.managers.cosmos_manager import CosmosEmbeddingManager
+from src.embedders.managers.hf_manager import GeneralEmbeddingManager
 from src.embedders.models import Backend, EmbeddersEnum
 
 

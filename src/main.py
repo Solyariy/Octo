@@ -1,41 +1,23 @@
+from contextlib import asynccontextmanager
+
 import uvicorn
-from fastapi import FastAPI, Response
-from pydantic import BaseModel, HttpUrl
+from fastapi import FastAPI
 
-app = FastAPI()
-
-
-class SaveData(BaseModel):
-    type: str
-    data: str
+from src.api.router import main_router
+from src.db.qdrant.init_db import init_qdrant_collections, close_qdrant_client, get_qdrant_client
 
 
-@app.get("/", status_code=200)
-async def get_info():
-    return dict(ok=True)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    qdrant_client = await get_qdrant_client()
+    await init_qdrant_collections(qdrant_client)
+    yield
+    await close_qdrant_client()
 
 
-@app.post(
-    "/save",
-    status_code=201
-)
-async def post_save(
-        data: SaveData
-):
-    print("Accepted data", data)
-    return Response(status_code=201)
+app = FastAPI(lifespan=lifespan)
 
-
-@app.post(
-    "/save/all",
-    status_code=201
-)
-async def post_save(
-        data: list[SaveData]
-):
-    print("Accepted data", data)
-    return Response(status_code=201)
-
+app.include_router(router=main_router)
 
 if __name__ == '__main__':
     uvicorn.run(app, port=8000, host="localhost", loop="uvloop")

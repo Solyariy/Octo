@@ -5,13 +5,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://octo:octo@db:5432/octo
+      - POSTGRES_URL=postgresql+asyncpg://octo:octo@postgres:5432/octo
+      - QDRANT_URL=http://qdrant:6333
     depends_on:
-      db:
+      qdrant:
+        condition: service_started
+      postgres:
         condition: service_healthy
     restart: unless-stopped
 
-  qdrant-db:
+  qdrant:
     image: qdrant/qdrant:latest
     restart: always
     container_name: qdrant
@@ -22,15 +25,12 @@ services:
       - 6333
       - 6334
       - 6335
-#    configs:
-#      - source: qdrant_config
-#        target: /qdrant/config/production.yaml
     volumes:
       - ./qdrant_data:/qdrant/storage
 
-  db:
+  postgres:
     image: postgres:17-alpine
-    container_name: octo-db
+    container_name: postgres
     environment:
       POSTGRES_USER: octo
       POSTGRES_PASSWORD: octo
