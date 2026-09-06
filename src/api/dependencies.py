@@ -1,8 +1,6 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException, Request
 from starlette import status
 
-from src.db.postgres.init_db import get_postgres_client
 from src.db.postgres.manager import PostgresManager
 from src.db.postgres.schemas import UserInfo
 from src.utils.annotations import StrUUID
@@ -25,3 +23,11 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authorized",
         )
+
+
+async def get_aiohttp_client(request: Request):
+    return request.app.state.aiohttp_client
+
+
+async def get_qdrant_client(request: Request):
+    return request.app.state.qdrant_client

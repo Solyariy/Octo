@@ -1,7 +1,6 @@
 import numpy as np
-from qdrant_client import models
+from qdrant_client import models, AsyncQdrantClient
 
-from src.db.qdrant.init_db import async_qdrant_client
 from src.db.qdrant.models import QDRANT_COLLECTIONS
 from src.embedders.models import EmbeddersEnum
 from src.utils.logs import LoggerMixin
@@ -9,9 +8,8 @@ from src.utils.order import get_uuid_str
 
 
 class QdrantManager(LoggerMixin):
-    @property
-    def client(self):
-        return async_qdrant_client
+    def __init__(self, qdrant_client: AsyncQdrantClient):
+        self.client = qdrant_client
 
     async def upsert_vectors(self, embedder_info: EmbeddersEnum, vectors: np.ndarray):
         result = await self.client.upsert(

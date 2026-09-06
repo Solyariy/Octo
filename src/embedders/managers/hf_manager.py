@@ -31,7 +31,7 @@ class GeneralEmbeddingManager(BaseEmbeddingManager):
             self.model = self._download_and_save(path)
 
     def _download_and_save(self, dest: Path) -> SentenceTransformer:
-        model = SentenceTransformer(self.embedder_info.value, **self.embedder_info.get_config(), use_auth_token=main_settings.HF_AUTH_TOKEN)
+        model = SentenceTransformer(self.embedder_info.value, **self.embedder_info.get_config(), use_auth_token=main_settings.HF_AUTH_TOKEN.get_secret_value())
 
         # Save atomically: write to a sibling .part dir, then move into place.
         # Prevents a partially-written dir from being mistaken for a valid model.

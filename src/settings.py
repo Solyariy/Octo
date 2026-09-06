@@ -10,8 +10,11 @@ LOG_ID = ContextVar("LOG_ID")
 class MainSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    MODELS_PATH: Path = Path(__name__).parent.parent.resolve() / "models"
-    HF_AUTH_TOKEN: str
+    ROOT_PATH: Path = Path(__name__).parent.parent.resolve()
+    MODELS_PATH: Path = ROOT_PATH / "models"
+    TEMP_DIR_PATH: Path = ROOT_PATH / "temp"
+
+    HF_AUTH_TOKEN: SecretStr
 
     SECRET_KEY: SecretStr
     ALGORITHM: str

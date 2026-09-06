@@ -16,7 +16,9 @@
 - Connection settings come from `src.settings.db_settings` (`postgres_url`, `qdrant_url`, `qdrant_api_key`, `qdrant_prefer_grpc`); this package defines no settings of its own
 - Defaults target the `docker-compose.yml` services: Postgres at `db:5432` (`octo`/`octo`/`octo`), Qdrant at `localhost:6333` with storage in `./qdrant_data`
 - `Base` is a plain `DeclarativeBase`, not `MappedAsDataclass`: `mapped_column` must not use dataclass-only arguments (`default_factory`, `init`, `kw_only`) — use `default` for Python-side values and `server_default` for DB-side ones
-- Qdrant collections are created idempotently by `init_qdrant_collections()`; no Postgres migration tool exists yet, so schema changes mean recreating tables
+- Qdrant collections are created idempotently by `init_qdrant_collections()`
+- Postgres schema changes go through Alembic (`alembic/`, date-nested `versions/<year>/<month>/`), never by recreating tables; `alembic/env.py` reads `Base.metadata`, so every `models.py` edit needs a matching revision
+- A new non-nullable column must carry a `server_default` in both the model and `op.add_column`, or the migration fails to backfill existing rows; pair it with a Python-side `default` so the ORM fills the value on INSERT instead of refetching it
 
 ## Work Guidance
 

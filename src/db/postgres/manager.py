@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from src.api.schemas import InputMediaFile
@@ -51,3 +51,20 @@ class PostgresManager(LoggerMixin):
             MediaFile.model_validate(r)
             for r in res.scalars()
         ]
+
+    async def get_unprocessed_media_files(self, user_id: StrUUID) -> list[MediaFile]:
+        stmt = (select(MediaFilePostgres)
+                .where(MediaFilePostgres.user_id == user_id)
+                .where(MediaFilePostgres.is_processed == False))
+        res = await self.__exec(stmt, commit=False)
+        return [
+            MediaFile.model_validate(r)
+            for r in res.scalars()
+        ]
+
+    async def set_processed_true(self, ids: list[StrUUID]):
+        stmt = (update(MediaFilePostgres)
+                .where(MediaFilePostgres.id.in_(ids))
+                .values(is_processed=True))
+        await self.__exec(stmt, commit=True)
+

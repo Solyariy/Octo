@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy import func
+from sqlalchemy import func, false, ForeignKey
 
 from src.db.postgres.init_db import Base
 
@@ -27,5 +27,9 @@ class MediaFilePostgres(Base):
         default=uuid.uuid4,
     )
     url: Mapped[str] = mapped_column(unique=True)
-    is_processed: Mapped[bool] = mapped_column(insert_default=True)
+    is_processed: Mapped[bool] = mapped_column(default=False, server_default=false())
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id"),
+    )
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

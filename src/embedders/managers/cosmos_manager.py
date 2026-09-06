@@ -68,7 +68,7 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
         kwargs = dict(
             trust_remote_code=True,
             cache_dir=main_settings.MODELS_PATH,
-            token=main_settings.HF_AUTH_TOKEN,
+            token=main_settings.HF_AUTH_TOKEN.get_secret_value(),
             **self.embedder_info.get_config(),
         )
         self.model = AutoModel.from_pretrained(self.embedder_info.value, **kwargs).to(
