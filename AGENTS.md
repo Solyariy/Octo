@@ -76,11 +76,12 @@ Default section order:
 
 ## Project
 
-- Octo is a FastAPI service that accepts content, embeds it with local HuggingFace models, and stores vectors in Qdrant alongside relational data in Postgres
+- Octo is a FastAPI service that accepts media URLs, embeds the media with local HuggingFace models, and stores vectors in Qdrant alongside relational data in Postgres
 - Python 3.13, managed with `uv`; run everything as `uv run python -m src.<module>` from the repository root
-- Runtime config comes from `.env` via pydantic-settings; `HF_AUTH_TOKEN` is required. Never commit `.env` or print secrets
-- `docker compose up --build` brings up the API (`:8000`), Postgres (`:5432`), and Qdrant (`:6333`/`:6334`)
-- Downloaded models live in `MODELS_PATH` (`<repo>/models`) and Qdrant data in `./qdrant_data`; both are local caches, never version them
+- Runtime config comes from `.env` via pydantic-settings. `HF_AUTH_TOKEN`, `SECRET_KEY`, `ALGORITHM` and `ACCESS_TOKEN_EXPIRE_MINUTES` have no defaults, so any import of `src.settings` fails without all four. Never commit `.env` or print secrets
+- `docker compose up --build` brings up three services: `app` (`:8000`), `postgres` (`:5432`), and `qdrant` (`:6333`/`:6334`)
+- Postgres schema lives in `src/db/postgres/models.py` and changes only through Alembic revisions under `alembic/versions/<year>/<month>/`
+- Downloaded models live in `MODELS_PATH` (`<repo>/models`), Qdrant data in `./qdrant_data`, and per-request scratch files in `TEMP_DIR_PATH` (`<repo>/temp`); all three are local caches, never version them
 - `transformers` is pinned to `>=4.51,<5`: Cosmos-Embed1's `trust_remote_code` implementation does not load on transformers 5. `torchcodec` is deliberately not a dependency — its wheels need FFmpeg dylibs macOS does not ship, and with it installed even `import sentence_transformers` fails; video decoding uses PyAV (`av`)
 - The project is early-stage: `README.md` is empty, no test runner, linter, type checker, or CI exists. Do not cite checks that are not configured
 - `.idea/` is JetBrains state, not project material; leave it alone
@@ -91,5 +92,6 @@ When the user requests a durable behavior change, record it here or in the relev
 
 ## Child DOX Index
 
-- `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `db`/`embedders`/`utils` packages below it
-- Root owns packaging (`pyproject.toml`, `uv.lock`), containerization (`Dockerfile`, `docker-compose.yml`), ignore files, and `README.md`
+- `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `api`/`db`/`embedders`/`utils` packages below it
+- `alembic/AGENTS.md` — Postgres migration environment, revision layout, and the generate/apply workflow
+- Root owns packaging (`pyproject.toml`, `uv.lock`), containerization (`Dockerfile`, `docker-compose.yml`, `.dockerignore`), `alembic.ini`, ignore files, and `README.md`
