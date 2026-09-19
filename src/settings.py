@@ -13,6 +13,7 @@ class MainSettings(BaseSettings):
     ROOT_PATH: Path = Path(__file__).parent.parent.resolve()
     MODELS_PATH: Path = ROOT_PATH / "models"
     TEMP_DIR_PATH: Path = ROOT_PATH / "temp"
+    INSTAGRAM_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "instagram"
 
     HF_AUTH_TOKEN: SecretStr
 

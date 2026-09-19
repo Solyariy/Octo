@@ -35,4 +35,5 @@
 - `api/AGENTS.md` — HTTP routes, request schemas, FastAPI dependencies
 - `db/AGENTS.md` — database and vector-store clients, session/client lifecycle, query managers
 - `embedders/AGENTS.md` — embedding model registry, backend managers, manual model checks
+- `link_parsers/AGENTS.md` — resolving social-media URLs (Instagram) to fetchable media
 - `utils/AGENTS.md` — logging, type annotations, download and video helpers
