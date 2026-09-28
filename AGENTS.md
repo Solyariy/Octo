@@ -55,6 +55,13 @@ Default section order:
 - Verification
 - Child DOX Index
 
+## Splitting
+
+- Split a code file when it holds more than one responsibility; past ~300 lines, re-check whether it does. Line count alone is never the reason to split
+- Split a child AGENTS.md when it exceeds ~60 lines or when one subfolder's details dominate it: move those details into that subfolder's own AGENTS.md and leave a one-line entry in the parent's Child DOX Index. The parent keeps only rules shared by all its children
+- Never split an AGENTS.md into sibling files (`AGENTS_<topic>.md`); every doc must be reachable by walking from the root to the target path
+- The root AGENTS.md is exempt from the line limit because it carries the DOX protocol, but project detail that belongs to one subtree still moves down
+
 ## Style
 
 - Keep docs concise, current, and operational
@@ -82,7 +89,7 @@ Default section order:
 - `docker compose up --build` brings up three services: `app` (`:8000`), `postgres` (`:5432`), and `qdrant` (`:6333`/`:6334`)
 - Postgres schema lives in `src/db/postgres/models.py` and changes only through Alembic revisions under `alembic/versions/<year>/<month>/`
 - Downloaded models live in `MODELS_PATH` (`<repo>/models`), Qdrant data in `./qdrant_data`, and per-request scratch files in `TEMP_DIR_PATH` (`<repo>/temp`); all three are local caches, never version them
-- `transformers` is pinned to `>=4.51,<5`: Cosmos-Embed1's `trust_remote_code` implementation does not load on transformers 5. `torchcodec` is deliberately not a dependency — its wheels need FFmpeg dylibs macOS does not ship, and with it installed even `import sentence_transformers` fails; video decoding uses PyAV (`av`)
+- `transformers` stays pinned to `>=4.51,<5` and `torchcodec` stays uninstalled; both are required by the embedding stack (see `src/embedders/AGENTS.md`)
 - The project is early-stage: `README.md` is empty, no test runner, linter, type checker, or CI exists. Do not cite checks that are not configured
 - `.idea/` is JetBrains state, not project material; leave it alone
 
@@ -92,6 +99,6 @@ When the user requests a durable behavior change, record it here or in the relev
 
 ## Child DOX Index
 
-- `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `api`/`db`/`embedders`/`utils` packages below it
+- `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `api`/`db`/`embedders`/`link_parsers`/`utils` packages below it
 - `alembic/AGENTS.md` — Postgres migration environment, revision layout, and the generate/apply workflow
 - Root owns packaging (`pyproject.toml`, `uv.lock`), containerization (`Dockerfile`, `docker-compose.yml`, `.dockerignore`), `alembic.ini`, ignore files, and `README.md`

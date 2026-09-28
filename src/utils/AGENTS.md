@@ -2,7 +2,7 @@
 
 ## Purpose
 
-- Dependency-light helpers shared across the service: logging, type aliases, time/id generation, HTTP downloads, device choice, video sampling
+- Dependency-light helpers shared across the service: logging, retry logging, type aliases, time/id generation, HTTP downloads, device choice, video sampling
 
 ## Ownership
 
@@ -12,6 +12,7 @@
 - `basic.py` — `download_file` and `download_and_save_file`, aiohttp downloads that stream to disk with aiofiles
 - `models.py` — `pick_device`, the torch device/dtype choice shared by every model backend
 - `video.py` — `sample_frames`, PyAV frame sampling for video models
+- `tenacity_logs.py` — `tenacity_log_before` / `tenacity_log_before_sleep` / `tenacity_log_after`, tenacity retry hooks that log each attempt through `Logger`
 
 ## Local Contracts
 
