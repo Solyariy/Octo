@@ -5,9 +5,9 @@ import aiofiles
 from fastapi import APIRouter, Response
 from starlette import status
 
+from src.api.auth.dependencies import CurrentUserDep
 from src.api.dependencies import (
     AiohttpClientDep,
-    CurrentUserDep,
     PostgresManagerDep,
     QdrantManagerDep,
 )
@@ -23,18 +23,12 @@ from src.utils.order import get_uuid_str
 main_router = APIRouter()
 
 
-@main_router.get(
-    "/health",
-    status_code=status.HTTP_200_OK
-)
+@main_router.get("/health", status_code=status.HTTP_200_OK)
 async def get_health():
     return dict(ok=True)
 
 
-@main_router.post(
-    "/save",
-    response_model=list[StrUUID]
-)
+@main_router.post("/save", response_model=list[StrUUID])
 async def post_save(
         data_all: list[InputMediaFile],
         pg_manager: PostgresManagerDep,
@@ -43,10 +37,7 @@ async def post_save(
     return [str(m.id) for m in media_files]
 
 
-@main_router.post(
-    "/process/all",
-    status_code=status.HTTP_200_OK
-)
+@main_router.post("/process/all", status_code=status.HTTP_200_OK)
 async def post_process_all(
         user_info: CurrentUserDep,
         pg_manager: PostgresManagerDep,
@@ -75,8 +66,7 @@ async def post_process_all(
 
         video_embeddings = await asyncio.to_thread(one_, paths)
     await qdrant_manager.upsert_vectors(
-        embedder_info=EmbeddersEnum.COSMOS_EMBED1_448P,
-        vectors=video_embeddings
+            embedder_info=EmbeddersEnum.COSMOS_EMBED1_448P, vectors=video_embeddings
     )
     await pg_manager.set_processed_true(ids=[data.id for data in unprocessed_data])
     return Response(status_code=status.HTTP_200_OK)

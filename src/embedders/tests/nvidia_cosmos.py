@@ -19,16 +19,15 @@ import numpy as np
 from src.embedders.factory import get_embedding_manager
 from src.embedders.models import EmbeddersEnum
 
-
 VIDEO_URL = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Branko_Paukovic%2C_javelin_throw.webm"
 
 CAPTIONS = [
-    "a person riding a motorcycle in the night",
-    "a car overtaking a white truck",
-    "a video of a knight fighting with a sword",
-    "a man wearing red spandex throwing a javelin",  # expected match
-    "a young man javelin throwing during the evening",  # distractor
-    "a man throwing a javelin with both hands",  # distractor
+        "a person riding a motorcycle in the night",
+        "a car overtaking a white truck",
+        "a video of a knight fighting with a sword",
+        "a man wearing red spandex throwing a javelin",  # expected match
+        "a young man javelin throwing during the evening",  # distractor
+        "a man throwing a javelin with both hands",  # distractor
 ]
 EXPECTED_CAPTION_INDEX = 3
 
@@ -59,8 +58,8 @@ def main() -> int:
 
         if video_embeddings.shape[1] != manager.output_dim:
             print(
-                f"\nFAIL: expected {manager.output_dim}-d vectors, got {video_embeddings.shape[1]}",
-                file=sys.stderr,
+                    f"\nFAIL: expected {manager.output_dim}-d vectors, got {video_embeddings.shape[1]}",
+                    file=sys.stderr,
             )
             return 1
 
@@ -76,8 +75,8 @@ def main() -> int:
 
         if best != EXPECTED_CAPTION_INDEX:
             print(
-                f"\nWARNING: expected '{CAPTIONS[EXPECTED_CAPTION_INDEX]}' to rank first.",
-                file=sys.stderr,
+                    f"\nWARNING: expected '{CAPTIONS[EXPECTED_CAPTION_INDEX]}' to rank first.",
+                    file=sys.stderr,
             )
             return 1
 

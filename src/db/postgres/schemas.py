@@ -5,10 +5,10 @@ from pydantic import BaseModel, ConfigDict
 
 
 class UserInfo(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
 
     id: UUID
-    username: str
+    email: str
 
 
 class MediaFile(BaseModel):

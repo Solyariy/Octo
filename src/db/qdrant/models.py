@@ -12,11 +12,12 @@ class QdrantCollection(BaseModel):
 
 
 QDRANT_COLLECTIONS: dict[EmbeddersEnum, QdrantCollection] = {
-    EmbeddersEnum.COSMOS_EMBED1_448P: QdrantCollection(
-        collection_name="cosmos_zero",
-        vectors_config=models.VectorParams(
-            size=EmbeddersEnum.COSMOS_EMBED1_448P.get_dim(),
-            distance=models.Distance.EUCLID
-        ),
-    )
+        EmbeddersEnum.COSMOS_EMBED1_448P:
+        QdrantCollection(
+                collection_name="cosmos_zero",
+                vectors_config=models.VectorParams(
+                        size=EmbeddersEnum.COSMOS_EMBED1_448P.get_dim(),
+                        distance=models.Distance.EUCLID
+                ),
+        )
 }

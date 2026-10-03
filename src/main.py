@@ -4,6 +4,7 @@ import aiohttp
 import uvicorn
 from fastapi import FastAPI
 
+from src.api.auth.router import auth_router
 from src.api.router import main_router
 from src.db.postgres.init_db import postgres_lifespan
 from src.db.qdrant.init_db import init_qdrant_collections, qdrant_client_lifespan
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(router=main_router)
+app.include_router(router=auth_router, prefix="/auth", tags=["Auth"])
 
 if __name__ == '__main__':
     uvicorn.run(app, port=8000, host="localhost", loop="uvloop")

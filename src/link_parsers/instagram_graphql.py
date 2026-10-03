@@ -51,11 +51,9 @@ def extract_shortcode(url_or_code: str) -> str:
 
 
 async def _csrf_token(session: aiohttp.ClientSession) -> str:
-    async with session.get(
-            "https://www.instagram.com/",
-            headers={"user-agent": instagram_settings.USER_AGENT},
-            timeout=instagram_settings.REQUEST_TIMEOUT
-    ) as resp:
+    async with session.get("https://www.instagram.com/", headers={"user-agent":
+                                                                  instagram_settings.USER_AGENT},
+                           timeout=instagram_settings.REQUEST_TIMEOUT) as resp:
         resp.raise_for_status()
     cookies = session.cookie_jar.filter_cookies("https://www.instagram.com")
     token_cookie = cookies.get("csrftoken")
@@ -65,36 +63,29 @@ async def _csrf_token(session: aiohttp.ClientSession) -> str:
 
 
 @retry(
-    stop=stop_after_attempt(instagram_settings.MAX_ATTEMPTS),
-    wait=wait_exponential(min=2, max=30),
-    retry=retry_if_exception_type(aiohttp.ClientError),
-    before=tenacity_log_before,
-    before_sleep=tenacity_log_before_sleep,
-    after=tenacity_log_after
+        stop=stop_after_attempt(instagram_settings.MAX_ATTEMPTS),
+        wait=wait_exponential(min=2, max=30),
+        retry=retry_if_exception_type(aiohttp.ClientError),
+        before=tenacity_log_before,
+        before_sleep=tenacity_log_before_sleep,
+        after=tenacity_log_after
 )
 async def fetch_reel_json(shortcode_or_url: str, session: aiohttp.ClientSession) -> dict:
     shortcode = extract_shortcode(shortcode_or_url)
     csrf_token = await _csrf_token(session)
 
     headers = {
-        "content-type": "application/x-www-form-urlencoded",
-        "user-agent": instagram_settings.USER_AGENT,
-        "x-csrftoken": csrf_token,
-        "x-ig-app-id": instagram_settings.IG_APP_ID,
+            "content-type": "application/x-www-form-urlencoded",
+            "user-agent": instagram_settings.USER_AGENT,
+            "x-csrftoken": csrf_token,
+            "x-ig-app-id": instagram_settings.IG_APP_ID,
     }
     variables = json.dumps({"shortcode": shortcode})
     payload = f"variables={quote(variables)}&doc_id={instagram_settings.DOC_ID}"
 
-    async with (
-        instagram_settings.SECONDS_LIMITER,
-        instagram_settings.HOUR_LIMITER,
-        session.post(
-            instagram_settings.GRAPHQL_URL,
-            headers=headers,
-            data=payload,
-            timeout=instagram_settings.REQUEST_TIMEOUT
-        ) as response
-    ):
+    async with (instagram_settings.SECONDS_LIMITER, instagram_settings.HOUR_LIMITER,
+                session.post(instagram_settings.GRAPHQL_URL, headers=headers, data=payload,
+                             timeout=instagram_settings.REQUEST_TIMEOUT) as response):
         if response.status == 429:
             raise InstagramFetchError("Rate limited by Instagram; try again later")
         if response.status == 404:
@@ -104,7 +95,8 @@ async def fetch_reel_json(shortcode_or_url: str, session: aiohttp.ClientSession)
 
 
 def parse_reel_data(shortcode: str, payload: dict) -> ReelData:
-    items = payload.get("data", {}).get("xdt_api__v1__media__shortcode__web_info", {}).get("items", [])
+    items = payload.get("data", {}).get("xdt_api__v1__media__shortcode__web_info",
+                                        {}).get("items", [])
     if not items:
         raise InstagramFetchError(f"No media items in response for {shortcode!r}")
     item = items[0]
@@ -116,14 +108,14 @@ def parse_reel_data(shortcode: str, payload: dict) -> ReelData:
     thumbnail_url = thumbnail_candidates[0]["url"] if thumbnail_candidates else None
 
     return ReelData(
-        shortcode=shortcode,
-        caption=caption,
-        like_count=item.get("like_count"),
-        comment_count=item.get("comment_count"),
-        video_url=video_url,
-        thumbnail_url=thumbnail_url,
-        username=(item.get("user") or {}).get("username"),
-        raw=payload,
+            shortcode=shortcode,
+            caption=caption,
+            like_count=item.get("like_count"),
+            comment_count=item.get("comment_count"),
+            video_url=video_url,
+            thumbnail_url=thumbnail_url,
+            username=(item.get("user") or {}).get("username"),
+            raw=payload,
     )
 
 
@@ -136,7 +128,9 @@ async def fetch_reel(shortcode_or_url: str, session: aiohttp.ClientSession) -> R
 async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", help="Reel/post URL or bare shortcode")
-    parser.add_argument("--out", type=str, default=None, help="Optional path to dump the raw JSON response")
+    parser.add_argument(
+            "--out", type=str, default=None, help="Optional path to dump the raw JSON response"
+    )
     args = parser.parse_args()
 
     async with aiohttp.ClientSession() as session:

@@ -20,7 +20,8 @@ def get_base_metadata() -> MetaData:
 
 
 @asynccontextmanager
-async def postgres_lifespan() -> AsyncIterator[tuple[AsyncEngine, async_sessionmaker[AsyncSession]]]:
+async def postgres_lifespan(
+) -> AsyncIterator[tuple[AsyncEngine, async_sessionmaker[AsyncSession]]]:
     """App-scoped engine: build once at startup, dispose once at shutdown.
 
     Importing this module must never open a connection — `alembic/env.py` imports
@@ -28,13 +29,13 @@ async def postgres_lifespan() -> AsyncIterator[tuple[AsyncEngine, async_sessionm
     left undisposed raises "Event loop is closed" during interpreter teardown.
     """
     engine = create_async_engine(
-        db_settings.POSTGRES_URL,
-        echo=db_settings.POSTGRES_ECHO,
-        pool_size=db_settings.POSTGRES_POOL_SIZE,
-        max_overflow=db_settings.POSTGRES_MAX_OVERFLOW,
-        pool_timeout=db_settings.POSTGRES_POOL_TIMEOUT,
-        pool_recycle=db_settings.POSTGRES_POOL_RECYCLE,
-        pool_pre_ping=db_settings.POSTGRES_POOL_PRE_PING,
+            db_settings.POSTGRES_URL,
+            echo=db_settings.POSTGRES_ECHO,
+            pool_size=db_settings.POSTGRES_POOL_SIZE,
+            max_overflow=db_settings.POSTGRES_MAX_OVERFLOW,
+            pool_timeout=db_settings.POSTGRES_POOL_TIMEOUT,
+            pool_recycle=db_settings.POSTGRES_POOL_RECYCLE,
+            pool_pre_ping=db_settings.POSTGRES_POOL_PRE_PING,
     )
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     try:

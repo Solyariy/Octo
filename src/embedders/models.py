@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
 
-
 Backend = Literal["sentence_transformers", "cosmos"]
 
 
@@ -41,20 +40,25 @@ class EmbeddersEnum(str, Enum):
 
 
 EMBEDDING_MODEL_CONFIG: dict[EmbeddersEnum, EmbedderSpec] = {
-    # Qwen3 embeddings are matryoshka-trained, so 2048 is a real truncation.
-    EmbeddersEnum.QWEN3_8B: EmbedderSpec(backend="sentence_transformers", dim=2048),
-    EmbeddersEnum.QWEN3_4B: EmbedderSpec(backend="sentence_transformers", dim=2048),
-    # Unproven: dim not measured yet, truncation is a no-op if the model is smaller.
-    EmbeddersEnum.JINA5_OMNI: EmbedderSpec(backend="sentence_transformers", dim=2048),
-    EmbeddersEnum.GEMMA_03B: EmbedderSpec(backend="sentence_transformers", dim=768),
-    EmbeddersEnum.COSMOS_EMBED1_448P: EmbedderSpec(backend="cosmos", dim=768),
+        # Qwen3 embeddings are matryoshka-trained, so 2048 is a real truncation.
+        EmbeddersEnum.QWEN3_8B:
+        EmbedderSpec(backend="sentence_transformers", dim=2048),
+        EmbeddersEnum.QWEN3_4B:
+        EmbedderSpec(backend="sentence_transformers", dim=2048),
+        # Unproven: dim not measured yet, truncation is a no-op if the model is smaller.
+        EmbeddersEnum.JINA5_OMNI:
+        EmbedderSpec(backend="sentence_transformers", dim=2048),
+        EmbeddersEnum.GEMMA_03B:
+        EmbedderSpec(backend="sentence_transformers", dim=768),
+        EmbeddersEnum.COSMOS_EMBED1_448P:
+        EmbedderSpec(backend="cosmos", dim=768),
 }
-
 
 _unregistered = [member.name for member in EmbeddersEnum if member not in EMBEDDING_MODEL_CONFIG]
 if _unregistered:
-    raise RuntimeError(f"EmbeddersEnum members without an EMBEDDING_MODEL_CONFIG entry: {_unregistered}")
-
+    raise RuntimeError(
+            f"EmbeddersEnum members without an EMBEDDING_MODEL_CONFIG entry: {_unregistered}"
+    )
 
 if __name__ == '__main__':
     for model in EmbeddersEnum:

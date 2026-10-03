@@ -12,7 +12,6 @@ from src.settings import main_settings
 from src.utils.models import pick_device
 from src.utils.video import sample_frames
 
-
 Clip = Path | str | np.ndarray
 
 
@@ -27,8 +26,8 @@ def require_supported_transformers() -> None:
     major = int(transformers.__version__.split(".")[0])
     if major >= 5:
         raise RuntimeError(
-            f"Cosmos-Embed1 requires transformers 4.x, found {transformers.__version__}. "
-            "Run `uv sync` to install the pinned version."
+                f"Cosmos-Embed1 requires transformers 4.x, found {transformers.__version__}. "
+                "Run `uv sync` to install the pinned version."
         )
 
 
@@ -60,20 +59,19 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
 
         require_supported_transformers()
         self.log_info(
-            "Loading model",
-            model=self.embedder_info.value,
-            device=str(self.device),
-            dtype=str(self.dtype),
+                "Loading model",
+                model=self.embedder_info.value,
+                device=str(self.device),
+                dtype=str(self.dtype),
         )
         kwargs = dict(
-            trust_remote_code=True,
-            cache_dir=main_settings.MODELS_PATH,
-            token=main_settings.HF_AUTH_TOKEN.get_secret_value(),
-            **self.embedder_info.get_config(),
+                trust_remote_code=True,
+                cache_dir=main_settings.MODELS_PATH,
+                token=main_settings.HF_AUTH_TOKEN.get_secret_value(),
+                **self.embedder_info.get_config(),
         )
-        self.model = AutoModel.from_pretrained(self.embedder_info.value, **kwargs).to(
-            self.device, dtype=self.dtype
-        )
+        self.model = AutoModel.from_pretrained(self.embedder_info.value, **kwargs
+                                               ).to(self.device, dtype=self.dtype)
         self.processor = AutoProcessor.from_pretrained(self.embedder_info.value, **kwargs)
 
     def encode_text(self, texts: list[str], **kwargs) -> np.ndarray:
@@ -99,7 +97,10 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
             return sample_frames(video, self.num_frames)
         if isinstance(video, np.ndarray) and video.ndim == 4:
             return video
-        raise TypeError("Expected a video path or a THWC frame array, got " f"{type(video).__name__}")
+        raise TypeError(
+                "Expected a video path or a THWC frame array, got "
+                f"{type(video).__name__}"
+        )
 
     def unload(self) -> None:
         super().unload()

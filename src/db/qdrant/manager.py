@@ -8,18 +8,19 @@ from src.utils.order import get_uuid_str
 
 
 class QdrantManager(LoggerMixin):
+
     def __init__(self, qdrant_client: AsyncQdrantClient):
         self.client = qdrant_client
 
     async def upsert_vectors(self, embedder_info: EmbeddersEnum, vectors: np.ndarray):
         result = await self.client.upsert(
-            collection_name=QDRANT_COLLECTIONS[embedder_info].collection_name,
-            points=[
-                models.PointStruct(
-                    id=get_uuid_str(),
-                    vector=vector.tolist(),
-                ) for vector in vectors
-            ]
+                collection_name=QDRANT_COLLECTIONS[embedder_info].collection_name,
+                points=[
+                        models.PointStruct(
+                                id=get_uuid_str(),
+                                vector=vector.tolist(),
+                        ) for vector in vectors
+                ]
         )
         self.log_info("Upsert result", result=result.model_dump(mode="json"))
         return result

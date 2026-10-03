@@ -17,12 +17,12 @@ class QdrantCollectionMismatchError(RuntimeError):
 def build_qdrant_client() -> AsyncQdrantClient:
     api_key = db_settings.QDRANT_API_KEY
     return AsyncQdrantClient(
-        url=db_settings.QDRANT_URL,
-        prefer_grpc=db_settings.QDRANT_PREFER_GRPC,
-        api_key=api_key.get_secret_value() if api_key is not None else None,
-        timeout=db_settings.QDRANT_TIMEOUT,
-        pool_size=db_settings.QDRANT_POOL_SIZE,
-        check_compatibility=db_settings.QDRANT_CHECK_COMPATIBILITY,
+            url=db_settings.QDRANT_URL,
+            prefer_grpc=db_settings.QDRANT_PREFER_GRPC,
+            api_key=api_key.get_secret_value() if api_key is not None else None,
+            timeout=db_settings.QDRANT_TIMEOUT,
+            pool_size=db_settings.QDRANT_POOL_SIZE,
+            check_compatibility=db_settings.QDRANT_CHECK_COMPATIBILITY,
     )
 
 
@@ -57,8 +57,8 @@ async def _ensure_collection(client: AsyncQdrantClient, collection: QdrantCollec
             # a flattened VectorParams reaches the gRPC path as a named-vectors
             # mapping and blows up in RestToGrpc.convert_vectors_config.
             await client.create_collection(
-                collection_name=collection.collection_name,
-                vectors_config=collection.vectors_config,
+                    collection_name=collection.collection_name,
+                    vectors_config=collection.vectors_config,
             )
             Logger.info("Created Qdrant collection", collection=collection.collection_name)
             return
@@ -69,27 +69,26 @@ async def _ensure_collection(client: AsyncQdrantClient, collection: QdrantCollec
             if not await client.collection_exists(collection.collection_name):
                 raise
             Logger.warning(
-                "Collection creation raced with another worker; validating instead",
-                collection=collection.collection_name,
+                    "Collection creation raced with another worker; validating instead",
+                    collection=collection.collection_name,
             )
 
     await _assert_collection_matches(client, collection)
 
 
-async def _assert_collection_matches(client: AsyncQdrantClient, collection: QdrantCollection) -> None:
+async def _assert_collection_matches(
+        client: AsyncQdrantClient, collection: QdrantCollection
+) -> None:
     info = await client.get_collection(collection.collection_name)
     actual = info.config.params.vectors
     expected = collection.vectors_config
 
     # `vectors` is VectorParams | dict[str, VectorParams] | None; a named-vectors
     # collection would silently break QdrantManager's unnamed PointStruct upserts.
-    if (
-        not isinstance(actual, models.VectorParams)
-        or actual.size != expected.size
-        or actual.distance != expected.distance
-    ):
+    if (not isinstance(actual, models.VectorParams) or actual.size != expected.size
+                or actual.distance != expected.distance):
         raise QdrantCollectionMismatchError(
-            f"Collection {collection.collection_name!r} exists with vectors={actual!r}, "
-            f"but the registry expects size={expected.size} distance={expected.distance}. "
-            "Refusing to modify it - migrate or drop it manually."
+                f"Collection {collection.collection_name!r} exists with vectors={actual!r}, "
+                f"but the registry expects size={expected.size} distance={expected.distance}. "
+                "Refusing to modify it - migrate or drop it manually."
         )

@@ -28,7 +28,7 @@
 ## Verification
 
 - `docker compose up --build` starts the API on `:8000` with Postgres and Qdrant; `GET /health` must return `{"ok": true}`
-- No test runner, linter, or type checker is configured
+- No test runner or type checker is configured; fix imports with `uv run ruff check --fix src`, then format with `uv run yapf -ir src`
 
 ## Child DOX Index
 
