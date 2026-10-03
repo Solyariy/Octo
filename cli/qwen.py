@@ -2,7 +2,7 @@
 
 Run with:
 
-    uv run python -m src.embedders.tests.qwen
+    uv run python -m cli.qwen
 """
 
 import sys

@@ -84,14 +84,14 @@ Default section order:
 ## Project
 
 - Octo is a FastAPI service that accepts media URLs, embeds the media with local HuggingFace models, and stores vectors in Qdrant alongside relational data in Postgres
-- Python 3.13, managed with `uv`; run everything as `uv run python -m src.<module>` from the repository root; `make server` starts the `postgres` and `qdrant` compose services detached, then runs the API locally (`src.main` on `localhost:8000`); `make clear [pg|qdrant]` stops the service(s) and deletes stored data (both when no argument), after which Postgres needs `alembic upgrade head` again
+- Python 3.13, managed with `uv`; run everything as `uv run python -m src.<module>` (or `cli.<script>` for hand-run scripts) from the repository root; `make server` starts the `postgres` and `qdrant` compose services detached, then runs the API locally (`src.main` on `localhost:8000`); `make cli <instagram|threads> "<url>" [ARGS="--out raw.json"]` runs the matching `cli.<platform>` scraper script (quote the url); `make clear [pg|qdrant]` stops the service(s) and deletes stored data (both when no argument), after which Postgres needs `alembic upgrade head` again
 - Runtime config comes from `.env` via pydantic-settings. `HF_AUTH_TOKEN`, `SECRET_KEY`, `ALGORITHM` and `ACCESS_TOKEN_EXPIRE_MINUTES` have no defaults, so any import of `src.settings` fails without all four. Never commit `.env` or print secrets
 - `docker compose up --build` brings up three services: `app` (`:8000`), `postgres` (`:5432`), and `qdrant` (`:6333`/`:6334`)
 - Postgres schema lives in `src/db/postgres/models.py` and changes only through Alembic revisions under `alembic/versions/<year>/<month>/`
 - Downloaded models live in `MODELS_PATH` (`<repo>/models`), Qdrant data in `./qdrant_data`, and per-request scratch files in `TEMP_DIR_PATH` (`<repo>/temp`); all three are local caches, never version them
 - `transformers` stays pinned to `>=4.51,<5` and `torchcodec` stays uninstalled; both are required by the embedding stack (see `src/embedders/AGENTS.md`)
 - The project is early-stage: `README.md` is empty, no test runner, type checker, or CI exists. Do not cite checks that are not configured
-- Formatting is `uv run yapf -ir src alembic` (`[tool.yapf]`, PEP 8 base, 100 cols, 8-space continuation indent with dedented closing brackets); ruff only lints (`uv run ruff check`) and its `--fix` is limited to import sorting and unused-import removal (`I`, `F401`); `ruff format` is disabled via `exclude = ["*"]`. Order: `ruff check --fix`, then `yapf`
+- Formatting is `uv run yapf -ir src alembic cli` (`[tool.yapf]`, PEP 8 base, 100 cols, 8-space continuation indent with dedented closing brackets); ruff only lints (`uv run ruff check`) and its `--fix` is limited to import sorting and unused-import removal (`I`, `F401`); `ruff format` is disabled via `exclude = ["*"]`. Order: `ruff check --fix`, then `yapf`
 - `.idea/` is JetBrains state, not project material; leave it alone
 
 ## User Preferences
@@ -102,4 +102,5 @@ When the user requests a durable behavior change, record it here or in the relev
 
 - `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `api`/`db`/`embedders`/`link_scrapers`/`utils` packages below it
 - `alembic/AGENTS.md` — Postgres migration environment, revision layout, and the generate/apply workflow
+- `cli/AGENTS.md` — every hand-run CLI and smoke-test script; CLI entrypoints never live in `src`
 - Root owns packaging (`pyproject.toml`, `uv.lock`), the `Makefile` (dev shortcuts), containerization (`Dockerfile`, `docker-compose.yml`, `.dockerignore`), `alembic.ini`, ignore files, and `README.md`

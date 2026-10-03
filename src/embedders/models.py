@@ -59,7 +59,3 @@ if _unregistered:
     raise RuntimeError(
             f"EmbeddersEnum members without an EMBEDDING_MODEL_CONFIG entry: {_unregistered}"
     )
-
-if __name__ == '__main__':
-    for model in EmbeddersEnum:
-        print(model.name, model.get_backend(), model.get_dim(), model.get_config())

@@ -5,12 +5,9 @@ but only when the request looks like a browser navigation (Safari user agent and
 `Accept` header); otherwise Threads serves a shell page with Open Graph tags only. No cookies,
 tokens or GraphQL calls are needed.
 
-Usage:
-    uv run python -m src.link_scrapers.threads <post-url> [--out raw.json] [--no-download]
+CLI: `uv run python -m cli.threads <post-url> [--out raw.json] [--no-download]`
 """
 
-import argparse
-import asyncio
 import json
 import re
 from collections.abc import Iterator
@@ -24,7 +21,6 @@ import aiohttp
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from src.link_scrapers.settings import threads_settings
-from src.settings import main_settings
 from src.utils.basic import download_and_save_file
 from src.utils.logs import Logger
 from src.utils.tenacity_logs import (
@@ -215,35 +211,3 @@ async def fetch_post(
     if download_dir is not None:
         await download_media(post, download_dir, session)
     return post
-
-
-async def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("url", help="Threads post URL, /share/ link or bare shortcode")
-    parser.add_argument(
-            "--out", type=str, default=None, help="Optional path to dump the raw post JSON"
-    )
-    parser.add_argument("--no-download", action="store_true", help="Skip downloading media")
-    args = parser.parse_args()
-
-    async with aiohttp.ClientSession() as session:
-        shortcode = await resolve_shortcode(args.url, session)
-        directory = None if args.no_download else main_settings.THREADS_TEMP_DIR_PATH / shortcode
-        post = await fetch_post(args.url, session=session, download_dir=directory)
-
-    print(
-            f"@{post.username} ({post.taken_at}) likes={post.like_count} "
-            f"replies={post.reply_count} reposts={post.repost_count}"
-    )
-    print(post.text)
-    for item in post.media:
-        print(f"- {item.kind} {item.width}x{item.height} {item.local_path or item.url}")
-
-    if args.out:
-        with open(args.out, "w") as f:
-            json.dump(post.raw, f, indent=2, ensure_ascii=False)
-        print(f"Saved raw post to {args.out}")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

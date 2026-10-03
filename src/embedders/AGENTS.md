@@ -12,7 +12,6 @@
 - `managers/base.py` — `BaseEmbeddingManager`, the backend-agnostic lifecycle (`load_model`/`encode_text`/`encode_video`/`unload`/context manager)
 - `managers/hf_manager.py` — `GeneralEmbeddingManager`, the sentence-transformers backend
 - `managers/cosmos_manager.py` — `CosmosEmbeddingManager`, the `trust_remote_code` `AutoModel` + `AutoProcessor` backend for Cosmos-Embed1
-- `tests/` — manual smoke scripts run by hand; see Verification
 
 ## Local Contracts
 
@@ -33,11 +32,7 @@
 - Log through `LoggerMixin` (`self.log_info` / `log_warning` / `log_error`), inherited from `BaseEmbeddingManager`
 - Device and dtype come from `src.utils.models.pick_device` (cuda/bfloat16 → mps/float32 → cpu/float32)
 - `QWEN3_4B` and `COSMOS_EMBED1_448P` are the models actually exercised; `COSMOS_EMBED1_448P` is the only one wired into the service. `QWEN3_8B`, `JINA5_OMNI` and `GEMMA_03B` are registered but unproven and their `dim` values are unverified
-- `tests/nvidia_cosmos.download_video` is a smoke-test helper; production download paths belong in `src.utils.basic`
 
 ## Verification
 
-- `uv run python -m src.embedders.tests.qwen` — loads `QWEN3_4B`, encodes three passages, prints dimensions and timing, exits non-zero if the paraphrase pair is not more similar than the unrelated pair
-- `uv run python -m src.embedders.tests.nvidia_cosmos` — downloads a sample clip, embeds it and six captions through `CosmosEmbeddingManager`, exits non-zero if the vectors are not `output_dim`-wide or the expected caption does not rank first
-- `uv run python -m src.embedders.models` — prints the registry, confirming every enum member resolves to a spec
-- `tests/` holds hand-run scripts with a `main() -> int` exit code, not pytest cases; keep new checks in that shape until a test runner is configured
+- Smoke scripts live in `cli/`: `uv run python -m cli.qwen`, `uv run python -m cli.nvidia_cosmos`, `uv run python -m cli.embedder_registry` (details in `cli/AGENTS.md`)

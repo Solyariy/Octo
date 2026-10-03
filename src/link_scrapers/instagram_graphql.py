@@ -6,12 +6,9 @@ No login or API key is required: a short-lived `csrftoken` cookie is pulled from
 GET to instagram.com and replayed on the GraphQL POST alongside a fixed `x-ig-app-id` and
 `doc_id`, both public constants embedded in Instagram's own web client.
 
-Usage:
-    uv run python -m src.link_scrapers.instagram_graphql <reel-or-post-url>
+CLI: `uv run python -m cli.instagram_graphql <reel-or-post-url>`
 """
 
-import argparse
-import asyncio
 import json
 import re
 from dataclasses import dataclass
@@ -21,11 +18,10 @@ import aiohttp
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from src.link_scrapers.settings import instagram_settings
-from src.settings import main_settings
 from src.utils.tenacity_logs import (
-    tenacity_log_after,
-    tenacity_log_before,
-    tenacity_log_before_sleep,
+        tenacity_log_after,
+        tenacity_log_before,
+        tenacity_log_before_sleep,
 )
 
 
@@ -127,32 +123,3 @@ async def fetch_reel(shortcode_or_url: str, session: aiohttp.ClientSession) -> R
     shortcode = extract_shortcode(shortcode_or_url)
     payload = await fetch_reel_json(shortcode_or_url, session=session)
     return parse_reel_data(shortcode, payload)
-
-
-async def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("url", help="Reel/post URL or bare shortcode")
-    parser.add_argument(
-            "--out", type=str, default=None, help="Optional path to dump the raw JSON response"
-    )
-    args = parser.parse_args()
-
-    async with aiohttp.ClientSession() as session:
-        data = await fetch_reel(args.url, session=session)
-        print(data)
-        if data.video_url:
-            async with session.get(data.video_url) as video_resp:
-                video_resp.raise_for_status()
-                raw = await video_resp.read()
-            with open(main_settings.INSTAGRAM_TEMP_DIR_PATH / "test.mp4", "wb") as f:
-                f.write(raw)
-
-    if args.out:
-        with open(args.out, "w") as f:
-            json.dump(data.raw, f, indent=2)
-        print(f"Saved raw response to {args.out}")
-
-
-if __name__ == "__main__":
-    URL = "https://www.instagram.com/reel/Dc-MjbqjZIs/?stkn=ODNpdXRjend4bW4z"
-    asyncio.run(main())
