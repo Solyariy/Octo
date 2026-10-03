@@ -49,6 +49,13 @@ class PostgresManager(LoggerMixin):
         user = UserInfo.model_validate(user)
         return user
 
+    async def get_user_by_email(self, user_email: str) -> UserInfo:
+        stmt = select(UserPostgres).where(UserPostgres.email == user_email)
+        res = await self.__exec(stmt, commit=False)
+        user = res.scalar_one()
+        user = UserInfo.model_validate(user)
+        return user
+
     async def get_user_for_auth(self, user_email: str) -> UserPostgres:
         stmt = select(UserPostgres).where(UserPostgres.email == user_email)
         res = await self.__exec(stmt, commit=False)

@@ -7,7 +7,7 @@ GET to instagram.com and replayed on the GraphQL POST alongside a fixed `x-ig-ap
 `doc_id`, both public constants embedded in Instagram's own web client.
 
 Usage:
-    uv run python -m src.link_parsers.instagram_graphql <reel-or-post-url>
+    uv run python -m src.link_scrapers.instagram_graphql <reel-or-post-url>
 """
 
 import argparse
@@ -18,11 +18,15 @@ from dataclasses import dataclass
 from urllib.parse import quote
 
 import aiohttp
-from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_exponential
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from src.link_parsers.settings import instagram_settings
+from src.link_scrapers.settings import instagram_settings
 from src.settings import main_settings
-from src.utils.tenacity_logs import tenacity_log_before, tenacity_log_before_sleep, tenacity_log_after
+from src.utils.tenacity_logs import (
+    tenacity_log_after,
+    tenacity_log_before,
+    tenacity_log_before_sleep,
+)
 
 
 class InstagramFetchError(Exception):

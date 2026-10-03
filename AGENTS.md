@@ -100,6 +100,6 @@ When the user requests a durable behavior change, record it here or in the relev
 
 ## Child DOX Index
 
-- `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `api`/`db`/`embedders`/`link_parsers`/`utils` packages below it
+- `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `api`/`db`/`embedders`/`link_scrapers`/`utils` packages below it
 - `alembic/AGENTS.md` — Postgres migration environment, revision layout, and the generate/apply workflow
 - Root owns packaging (`pyproject.toml`, `uv.lock`), the `Makefile` (dev shortcuts), containerization (`Dockerfile`, `docker-compose.yml`, `.dockerignore`), `alembic.ini`, ignore files, and `README.md`

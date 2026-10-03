@@ -1,7 +1,9 @@
-from pathlib import Path
 from contextvars import ContextVar
+from datetime import timedelta
+from pathlib import Path
+from typing import Annotated
 
-from pydantic import SecretStr
+from pydantic import BeforeValidator, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 LOG_ID = ContextVar("LOG_ID")
@@ -14,12 +16,18 @@ class MainSettings(BaseSettings):
     MODELS_PATH: Path = ROOT_PATH / "models"
     TEMP_DIR_PATH: Path = ROOT_PATH / "temp"
     INSTAGRAM_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "instagram"
+    THREADS_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "threads"
 
     HF_AUTH_TOKEN: SecretStr
 
     SECRET_KEY: SecretStr
     ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    ACCESS_TOKEN_EXPIRE_MINUTES: Annotated[
+        timedelta,
+        BeforeValidator(
+            lambda v: timedelta(minutes=int(v)) if str(v).isdigit() else v
+        ),
+    ]
 
 
 main_settings = MainSettings()

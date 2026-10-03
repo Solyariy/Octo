@@ -58,13 +58,13 @@ class AuthManager:
                     main_settings.SECRET_KEY.get_secret_value(),
                     algorithms=[main_settings.ALGORITHM],
             )
-            user_id = payload.get("sub")
-            if user_id is None:
+            user_email = payload.get("sub")
+            if user_email is None:
                 raise credentials_exception
-            token_data = TokenData(user_id=user_id)
+            token_data = TokenData(user_email=user_email)
         except InvalidTokenError as e:
             raise credentials_exception from e
-        user = await pg_manager.get_user_by_id(user_id=token_data.user_id)
+        user = await pg_manager.get_user_by_email(user_email=token_data.user_email)
         if user is None:
             raise credentials_exception
         return user
