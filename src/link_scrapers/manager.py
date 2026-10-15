@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 
 from src.enums import Platform
-from src.link_scrapers.schemas import Post
+from src.link_scrapers.schemas import ScrapedPost
 from src.link_scrapers.scrapers import instagram_graphql, threads
 from src.link_scrapers.scrapers.instagram_graphql import InstagramFetchError, ReelData
 from src.link_scrapers.scrapers.threads import ThreadsFetchError, ThreadsPost
@@ -28,7 +28,7 @@ class LinkScraper(LoggerMixin):
             return Platform.THREADS
         raise UnsupportedLinkError(f"No scraper supports {url!r}")
 
-    async def scrap(self, url: str) -> Post:
+    async def scrap(self, url: str) -> ScrapedPost:
         """Dispatch `url` to the matching platform scraper and normalize the result."""
         platform = self.classify_platform(url)
         match platform:
@@ -36,9 +36,9 @@ class LinkScraper(LoggerMixin):
                 data = await self.scrap_instagram_reel(url)
             case Platform.THREADS:
                 data = await self.scrap_threads_post(url)
-        return Post.from_scraper(data)
+        return ScrapedPost.from_scraper(data)
 
-    async def scrap_bulk(self, urls: list[str]) -> list[Post | Exception]:
+    async def scrap_bulk(self, urls: list[str]) -> list[ScrapedPost | Exception]:
         tasks = [self.scrap(url) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         return results

@@ -7,7 +7,7 @@
 ## Ownership
 
 - `router.py` — `main_router`, the single `APIRouter` mounted by `src.main`; holds `GET /health`, `POST /save`, `POST /process/all`
-- `schemas.py` — request bodies exchanged with clients (`InputMediaFile`)
+- `schemas.py` — request bodies exchanged with clients (`InputPost`)
 - `dependencies.py` — the `app.state` accessors (`get_aiohttp_client`, `get_qdrant_manager`, `get_postgres_manager`), `get_current_user`, and the `Annotated` aliases routes actually use: `AiohttpClientDep`, `QdrantManagerDep`, `PostgresManagerDep`, `CurrentUserDep`
 
 ## Local Contracts

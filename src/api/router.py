@@ -11,8 +11,8 @@ from src.api.dependencies import (
     PostgresManagerDep,
     QdrantManagerDep,
 )
-from src.api.schemas import InputMediaFile
-from src.db.postgres.schemas import MediaFile
+from src.api.schemas import InputPost
+from src.db.postgres.schemas import Post
 from src.db.qdrant.schemas import QdrantVector
 from src.embedders.factory import get_embedding_manager
 from src.embedders.models import EmbeddersEnum
@@ -30,11 +30,11 @@ async def get_health():
 
 @main_router.post("/save", response_model=list[StrUUID])
 async def post_save(
-        data_all: list[InputMediaFile],
+        data_all: list[InputPost],
         user_info: CurrentUserDep,
         pg_manager: PostgresManagerDep,
 ) -> list[StrUUID]:
-    media_files: list[MediaFile] = await pg_manager.insert_media_file_bulk(data_all, user_info)
+    media_files: list[Post] = await pg_manager.insert_media_file_bulk(data_all, user_info)
     return [str(m.id) for m in media_files]
 
 

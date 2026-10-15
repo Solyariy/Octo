@@ -8,7 +8,7 @@
 
 - `instagram_graphql.py` — fetches a reel/post via `src.link_scrapers.instagram_graphql.fetch_reel`, prints it, saves the video to `main_settings.INSTAGRAM_TEMP_DIR_PATH / "test.mp4"` (does not create the directory), `--out` dumps the raw JSON
 - `threads.py` — fetches a post via `src.link_scrapers.scrapers.threads.fetch_post`, prints it, downloads media via `download_media` to `main_settings.THREADS_TEMP_DIR_PATH / <shortcode>` (created) unless `--no-download`, `--out` dumps the raw post JSON
-- `link_scraper.py` — classifies the url and scrapes it via `src.link_scrapers.manager.LinkScraper.scrap`, prints the platform and the normalized `Post` JSON, `--out` dumps that JSON; exits 1 on an unsupported url or a platform fetch error. No media download
+- `link_scraper.py` — classifies the url and scrapes it via `src.link_scrapers.manager.LinkScraper.scrap`, prints the platform and the normalized `ScrapedPost` JSON, `--out` dumps that JSON; exits 1 on an unsupported url or a platform fetch error. No media download
 - `qwen.py` — loads `QWEN3_4B`, encodes three passages, exits non-zero if the paraphrase pair is not more similar than the unrelated pair
 - `nvidia_cosmos.py` — downloads a sample clip, embeds it and six captions through `CosmosEmbeddingManager`, exits non-zero if vectors are not `output_dim`-wide or the expected caption does not rank first; its `download_video` is a smoke-test helper, production downloads belong in `src.utils.basic`
 - `postgres.py` — upserts the admin user (`--email`, default `admin@octo.local`; `--password`, default `admin`) straight into Postgres via `PostgresManager.upsert_user`; testing environments only, needs migrated tables (`alembic upgrade head`)

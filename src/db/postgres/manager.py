@@ -4,9 +4,9 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.api.schemas import InputMediaFile
-from src.db.postgres.models import MediaFilePostgres, UserPostgres
-from src.db.postgres.schemas import MediaFile, MediaFileIdUrl, UserInfo
+from src.api.schemas import InputPost
+from src.db.postgres.models import PostPostgres, UserPostgres
+from src.db.postgres.schemas import Post, PostIdUrl, UserInfo
 from src.utils.annotations import StrUUID
 from src.utils.logs import LoggerMixin
 
@@ -74,9 +74,9 @@ class PostgresManager(LoggerMixin):
         res = await self.__exec(stmt, commit=True)
         return UserInfo.model_validate(res.scalar_one())
 
-    async def insert_media_file_bulk(self, media_files: list[InputMediaFile], user_info: UserInfo) -> list[MediaFile]:
+    async def insert_media_file_bulk(self, media_files: list[InputPost], user_info: UserInfo) -> list[Post]:
         stmt = (
-            insert(MediaFilePostgres).values(
+            insert(PostPostgres).values(
                 [
                     {
                         **mf.model_dump(mode="json"),
@@ -84,31 +84,31 @@ class PostgresManager(LoggerMixin):
                     }
                     for mf in media_files
                 ]
-            ).on_conflict_do_nothing().returning(MediaFilePostgres)
+            ).on_conflict_do_nothing().returning(PostPostgres)
         )
         res = await self.__exec(stmt, commit=True)
-        return [MediaFile.model_validate(r) for r in res.scalars()]
+        return [Post.model_validate(r) for r in res.scalars()]
 
-    async def get_unprocessed_media_files(self, user_id: StrUUID) -> list[MediaFile]:
+    async def get_unprocessed_media_files(self, user_id: StrUUID) -> list[Post]:
         stmt = (
-            select(MediaFilePostgres).where(
-                MediaFilePostgres.user_id == user_id
-            ).where(MediaFilePostgres.is_processed == False)
+            select(PostPostgres).where(
+                PostPostgres.user_id == user_id
+            ).where(PostPostgres.is_processed == False)
         )
         res = await self.__exec(stmt, commit=False)
-        return [MediaFile.model_validate(r) for r in res.scalars()]
+        return [Post.model_validate(r) for r in res.scalars()]
 
     async def set_processed_true(self, ids: list[StrUUID]):
         stmt = (
-            update(MediaFilePostgres).where(
-                MediaFilePostgres.id.in_(ids)
+            update(PostPostgres).where(
+                PostPostgres.id.in_(ids)
             ).values(is_processed=True)
         )
         await self.__exec(stmt, commit=True)
 
-    async def get_media_file_by_id_bulk(self, ids: list[StrUUID]) -> list[MediaFileIdUrl]:
-        stmt = select(MediaFilePostgres.id, MediaFilePostgres.url).where(
-            MediaFilePostgres.id.in_(ids)
+    async def get_media_file_by_id_bulk(self, ids: list[StrUUID]) -> list[PostIdUrl]:
+        stmt = select(PostPostgres.id, PostPostgres.url).where(
+            PostPostgres.id.in_(ids)
         )
         res = await self.__exec(stmt, commit=False)
-        return [MediaFileIdUrl.model_validate(r) for r in res.scalars()]
+        return [PostIdUrl.model_validate(r) for r in res.scalars()]

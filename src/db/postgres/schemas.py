@@ -11,14 +11,14 @@ class UserInfo(BaseModel):
     email: str
 
 
-class MediaFileIdUrl(BaseModel):
+class PostIdUrl(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     url: str
 
 
-class MediaFile(BaseModel):
+class Post(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID

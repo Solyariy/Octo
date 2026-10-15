@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class InputMediaFile(BaseModel):
+class InputPost(BaseModel):
     url: str
 
 

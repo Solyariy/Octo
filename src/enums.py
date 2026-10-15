@@ -9,3 +9,10 @@ class Platform(StrEnum):
     # todo
     # TELEGRAM = "telegram"
     # TIKTOK = "tiktok"
+
+
+class ProcessingStatus(StrEnum):
+    PENDING = "pending"
+    IN_PROCESS = "in_process"
+    SUCCESS = "success"
+    FAILED = "failed"
