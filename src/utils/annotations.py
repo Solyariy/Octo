@@ -1,5 +1,4 @@
-from typing import NewType, Annotated
-from uuid import UUID
+from typing import Annotated, NewType
 
 from pydantic import Field
 

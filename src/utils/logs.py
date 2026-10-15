@@ -1,7 +1,8 @@
 import functools
+import logging
 import sys
 import traceback
-import logging
+
 import structlog
 
 from src.utils.order import get_log_id

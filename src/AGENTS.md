@@ -6,7 +6,7 @@
 
 ## Ownership
 
-- Owns `main.py` (FastAPI app, `lifespan`, uvicorn entrypoint) and `settings.py` (`MainSettings`, `DBSettings`, `LOG_ID`)
+- Owns `main.py` (FastAPI app, `lifespan`, uvicorn entrypoint), `settings.py` (`MainSettings`, `DBSettings`, `LOG_ID`) and `enums.py` (shared `StrEnum`s, e.g. `Platform`)
 - Owns cross-package conventions listed below; delegates domain detail to `api/`, `db/`, `embedders/`, `link_scrapers/`, `utils/`
 
 ## Local Contracts

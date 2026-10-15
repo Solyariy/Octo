@@ -17,6 +17,7 @@ class MediaFileIdUrl(BaseModel):
     id: UUID
     url: str
 
+
 class MediaFile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -5,7 +5,6 @@ import aiofiles
 from fastapi import APIRouter, Response
 from starlette import status
 
-from src.db.qdrant.schemas import QdrantVector
 from src.api.auth.dependencies import CurrentUserDep
 from src.api.dependencies import (
     AiohttpClientDep,
@@ -14,6 +13,7 @@ from src.api.dependencies import (
 )
 from src.api.schemas import InputMediaFile
 from src.db.postgres.schemas import MediaFile
+from src.db.qdrant.schemas import QdrantVector
 from src.embedders.factory import get_embedding_manager
 from src.embedders.models import EmbeddersEnum
 from src.settings import main_settings

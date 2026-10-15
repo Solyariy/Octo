@@ -27,15 +27,16 @@ endif
 pg qdrant:
 	@:
 
-# `make cli <platform> <url> [ARGS="--out raw.json"]` runs `cli.<platform>` (the scraper smoke scripts); quote the url
+# `make cli <instagram|threads|link> <url> [ARGS="--out raw.json"]` runs the matching scraper smoke script; quote the url
 CLI_MODULE_instagram := cli.instagram_graphql
 CLI_MODULE_threads := cli.threads
+CLI_MODULE_link := cli.link_scraper
 CLI_PLATFORM := $(word 2,$(MAKECMDGOALS))
 CLI_URL := $(wordlist 3,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 
 cli:
 	@test -n "$(CLI_MODULE_$(CLI_PLATFORM))" && test -n "$(CLI_URL)" || \
-		{ echo 'usage: make cli <instagram|threads> "<url>" [ARGS="--out raw.json"]'; exit 1; }
+		{ echo 'usage: make cli <instagram|threads|link> "<url>" [ARGS="--out raw.json"]'; exit 1; }
 	uv run python -m $(CLI_MODULE_$(CLI_PLATFORM)) '$(CLI_URL)' $(ARGS)
 
 # The platform and url are arguments for `make cli`, not standalone targets

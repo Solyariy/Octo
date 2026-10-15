@@ -57,8 +57,13 @@ async def _ensure_collection(client: AsyncQdrantClient, collection: QdrantCollec
             # a flattened VectorParams reaches the gRPC path as a named-vectors
             # mapping and blows up in RestToGrpc.convert_vectors_config.
             await client.create_collection(
-                    collection_name=collection.collection_name,
-                    vectors_config=collection.vectors_config,
+                collection_name=collection.collection_name,
+                vectors_config=collection.vectors_config,
+            )
+            await client.create_payload_index(
+                collection_name=collection.collection_name,
+                field_name="user_id",
+                field_schema=models.PayloadSchemaType.KEYWORD,
             )
             Logger.info("Created Qdrant collection", collection=collection.collection_name)
             return

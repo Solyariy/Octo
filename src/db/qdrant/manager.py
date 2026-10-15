@@ -1,34 +1,49 @@
 
 import numpy as np
 from qdrant_client import AsyncQdrantClient, models
+from qdrant_client.models import FieldCondition, Filter, MatchValue
 
+from src.db.postgres.schemas import UserInfo
 from src.db.qdrant.models import QdrantCollection
 from src.db.qdrant.schemas import QdrantVector
 from src.utils.logs import LoggerMixin
+from src.utils.order import get_uuid_str
 
 
 class QdrantManager(LoggerMixin):
     def __init__(self, qdrant_client: AsyncQdrantClient):
         self.client = qdrant_client
 
-    async def upsert_vectors(self, collection: QdrantCollection, vectors: list[QdrantVector]):
+    async def upsert_vectors(self, collection: QdrantCollection, vectors: list[QdrantVector], user_info: UserInfo):
         result = await self.client.upsert(
-                collection_name=collection.collection_name,
-                points=[
-                        models.PointStruct(
-                                id=vector.id,
-                                vector=vector.vector,
-                        ) for vector in vectors
-                ]
+            collection_name=collection.collection_name,
+            points=[
+                models.PointStruct(
+                    id=get_uuid_str(),
+                    vector=vector.vector,
+                    payload=dict(
+                        user_id=user_info.id,
+                        post_id=vector.id
+                    )
+                ) for vector in vectors
+            ]
         )
         self.log_info("Upsert result", result=result.model_dump(mode="json"))
         return result
 
-    async def find_similar(self, collection: QdrantCollection, query_vector: np.ndarray):
+    async def find_similar(self, collection: QdrantCollection, query_vector: np.ndarray, user_info: UserInfo):
         results = await self.client.query_points(
             collection_name=collection.collection_name,
             query=query_vector,
-            limit=15
+            limit=15,
+            query_filter=Filter(
+                must=[
+                    FieldCondition(
+                        key="user_id",
+                        match=MatchValue(value=user_info.id)
+                    )
+                ]
+            )
         )
         if results.points:
             best_score = max(p.score for p in results.points)

@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class Platforms(str, Enum):
+class Platform(StrEnum):
     # supported
     THREADS = "threads"
     INSTAGRAM = "instagram"

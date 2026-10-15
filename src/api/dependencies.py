@@ -22,23 +22,3 @@ async def get_postgres_manager(request: Request) -> PostgresManager:
 AiohttpClientDep = Annotated[aiohttp.ClientSession, Depends(get_aiohttp_client)]
 QdrantManagerDep = Annotated[QdrantManager, Depends(get_qdrant_manager)]
 PostgresManagerDep = Annotated[PostgresManager, Depends(get_postgres_manager)]
-
-# async def get_current_user(
-#         user_id: StrUUID,
-#         pg_manager: PostgresManagerDep,
-# ) -> UserInfo:
-#     try:
-#         user = await pg_manager.get_user_by_id(user_id=user_id)
-#         return user
-#     except Exception as e:
-#         Logger.error(
-#             "Error on auth",
-#             user_id=user_id,
-#             error=e
-#         )
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Not authorized",
-#         )
-
-# CurrentUserDep = Annotated[UserInfo, Depends(get_current_user)]

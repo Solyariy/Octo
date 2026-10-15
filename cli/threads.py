@@ -12,7 +12,11 @@ import json
 
 import aiohttp
 
-from src.link_scrapers.scrapers.threads import fetch_post, resolve_shortcode
+from src.link_scrapers.scrapers.threads import (
+        download_media,
+        fetch_post,
+        resolve_shortcode,
+)
 from src.settings import main_settings
 
 
@@ -27,8 +31,10 @@ async def main() -> None:
 
     async with aiohttp.ClientSession() as session:
         shortcode = await resolve_shortcode(args.url, session)
-        directory = None if args.no_download else main_settings.THREADS_TEMP_DIR_PATH / shortcode
-        post = await fetch_post(args.url, session=session, download_dir=directory)
+        post = await fetch_post(args.url, session=session)
+        if not args.no_download:
+            directory = main_settings.THREADS_TEMP_DIR_PATH / shortcode
+            await download_media(post, directory, session)
 
     print(
             f"@{post.username} ({post.taken_at}) likes={post.like_count} "

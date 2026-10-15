@@ -203,11 +203,8 @@ async def download_media(post: ThreadsPost, directory: Path, session: aiohttp.Cl
 async def fetch_post(
         url_or_code: str,
         session: aiohttp.ClientSession,
-        download_dir: Path | None = None
 ) -> ThreadsPost:
     shortcode = await resolve_shortcode(url_or_code, session)
     html = await fetch_post_html(shortcode, session=session)
     post = parse_post(shortcode, extract_post_json(html, shortcode))
-    if download_dir is not None:
-        await download_media(post, download_dir, session)
     return post

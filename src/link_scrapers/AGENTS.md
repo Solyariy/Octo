@@ -10,7 +10,8 @@
 - `scrapers/threads.py` — async `fetch_post` / `fetch_post_html` / `extract_post_json` / `parse_post` / `download_media`, the `ThreadsPost` and `MediaItem` dataclasses, `ThreadsFetchError`, `extract_shortcode`, `resolve_shortcode` (also follows `threads.com/share/<id>` links via their 302 `Location`, behind the same limiters). Scrapes the permalink HTML (`threads.com/post/<shortcode>`) for the embedded post JSON; no GraphQL, cookies or tokens (details in `scrapers-knowledge/threads-knowledge.md`)
 - `settings.py` — `InstagramSettings` / `instagram_settings` (endpoint URL, `IG_APP_ID`, `DOC_ID`, user agent, timeout, two `aiolimiter` limiters, `MAX_ATTEMPTS`, `SHORTCODE_RE`) and `ThreadsSettings` / `threads_settings` (Safari user agent, document `Accept`, timeout, limiters, `MAX_ATTEMPTS`, `SHORTCODE_RE`, `SHARE_RE`)
 - `scrapers-knowledge/` — detailed per-platform scraping notes, one file per platform (`threads-knowledge.md`, `instagram-knowledge.md`): what was tried, what works, request/response shapes, field layouts, constants, limits. Prose reference only, no code
-- `manager.py` — `LinkScraper`, a `LoggerMixin` stub whose `load_ig_reels` is not implemented yet
+- `manager.py` — `LinkScraper`, the single entry point over `scrapers/`: `classify_platform` maps a URL to `Platform` (reusing each platform's `SHORTCODE_RE`/`SHARE_RE`) or raises `UnsupportedLinkError`; `scrap(url)` dispatches to `scrap_instagram_reel` / `scrap_threads_post` (which log and re-raise the platform's fetch error and return the raw scraper dataclass) and returns a normalized `Post`. New platforms get a `Platform` member, a `scrap_<platform>_*` method, a `scrap` branch and a `Post._from_<platform>_*` converter
+- `schemas.py` — `Post`, the platform-neutral scrape result: image/video URL lists, empty `*_local_paths` lists for downloaders to fill, `text` and `Platform`. `Post.from_scraper` dispatches on `ReelData` / `ThreadsPost`; an Instagram thumbnail counts as an image only when there is no video
 
 ## Local Contracts
 
@@ -20,7 +21,7 @@
 - `IG_APP_ID` and `DOC_ID` are public constants scraped from Instagram's web client, not secrets. If Instagram rotates them the endpoint starts returning 400 and both need re-extracting from a fresh page load
 - No credentials live here; the scrape is unauthenticated
 - Threads only embeds the post JSON for browser-like navigations: keep the Safari `user-agent` and document `accept` header in `fetch_post_html`. Otherwise it serves a shell page and `extract_post_json` raises `ThreadsFetchError`. Every Threads GET passes through its own `SECONDS_LIMITER` (1 per 5 s) and `HOUR_LIMITER` (120 per hour); retries mirror the Instagram rule
-- `fetch_post` returns text, author, counts and `MediaItem`s (carousel children, else the single largest video/image); with `download_dir` it also saves `NN.<ext>` files there and sets `local_path`. CDN URLs expire, so download right after fetching. Replies and thread continuations are not scraped
+- `fetch_post` returns text, author, counts and `MediaItem`s (carousel children, else the single largest video/image); it never downloads. `download_media(post, directory, session)` saves `NN.<ext>` files and sets `local_path`. CDN URLs expire, so download right after fetching. Replies and thread continuations are not scraped
 - Detailed platform-specific information (endpoints, headers, request/response structure, field layouts, constants, failed approaches, test findings) goes into the matching file in `scrapers-knowledge/` (create `<platform>-knowledge.md` for a new platform), not into this file or code comments. Keep only the short operating rules here and update the knowledge file whenever a scraper's behavior or a verified finding changes
 - Nothing here is wired into `src.api` yet
 
@@ -30,4 +31,4 @@
 
 ## Verification
 
-- `uv run python -m cli.instagram_graphql <reel-url>` and `uv run python -m cli.threads <post-url>` (flags in `cli/AGENTS.md`); no automated test suite
+- `uv run python -m cli.instagram_graphql <reel-url>`, `uv run python -m cli.threads <post-url>` and `uv run python -m cli.link_scraper <url>` for `LinkScraper` (flags in `cli/AGENTS.md`); no automated test suite
