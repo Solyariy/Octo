@@ -20,7 +20,7 @@ class UserPostgres(Base):
 
 
 class PostPostgres(Base):
-    __tablename__ = "media_files"
+    __tablename__ = "posts"
 
     id: Mapped[uuid.UUID] = mapped_column(
             PG_UUID(as_uuid=True),
@@ -29,7 +29,6 @@ class PostPostgres(Base):
     )
     url: Mapped[str] = mapped_column(unique=True)
     platform: Mapped[Platform]
-    # is_processed: Mapped[bool] = mapped_column(default=False, server_default=false())
     status: Mapped[ProcessingStatus]
     user_id: Mapped[uuid.UUID] = mapped_column(
             PG_UUID(as_uuid=True),
