@@ -31,6 +31,7 @@
 
 - Log through `LoggerMixin` (`self.log_info` / `log_warning` / `log_error`), inherited from `BaseEmbeddingManager`
 - Device and dtype come from `src.utils.models.pick_device` (cuda/bfloat16 → mps/float32 → cpu/float32)
+- Modality assignment (user decision): `COSMOS_EMBED1_448P` is the video model, and the Qwen3 models (`QWEN3_*`) are the text models. Cosmos `encode_text` exists only for text-to-video search (embedding a query against Cosmos video vectors); text content itself (captions, posts) is embedded with Qwen. Never route video to Qwen; image embedding has no assigned model yet
 - `QWEN3_4B` and `COSMOS_EMBED1_448P` are the models actually exercised; `COSMOS_EMBED1_448P` is the only one wired into the service. `QWEN3_8B`, `JINA5_OMNI` and `GEMMA_03B` are registered but unproven and their `dim` values are unverified
 
 ## Verification

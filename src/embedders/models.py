@@ -22,6 +22,7 @@ class EmbedderSpec:
 class EmbeddersEnum(str, Enum):
     QWEN3_8B = "Qwen/Qwen3-Embedding-8B"
     QWEN3_4B = "Qwen/Qwen3-Embedding-4B"
+    QWEN3_06B ="Qwen/Qwen3-Embedding-0.6B"
     JINA5_OMNI = "jinaai/jina-embeddings-v5-omni-small"
     GEMMA_03B = "google/embeddinggemma-300m"
     COSMOS_EMBED1_448P = "nvidia/Cosmos-Embed1-448p"
@@ -40,12 +41,12 @@ class EmbeddersEnum(str, Enum):
 
 
 EMBEDDING_MODEL_CONFIG: dict[EmbeddersEnum, EmbedderSpec] = {
-        # Qwen3 embeddings are matryoshka-trained, so 2048 is a real truncation.
+        EmbeddersEnum.QWEN3_06B:
+        EmbedderSpec(backend="sentence_transformers", dim=1024),
         EmbeddersEnum.QWEN3_8B:
         EmbedderSpec(backend="sentence_transformers", dim=2048),
         EmbeddersEnum.QWEN3_4B:
         EmbedderSpec(backend="sentence_transformers", dim=2048),
-        # Unproven: dim not measured yet, truncation is a no-op if the model is smaller.
         EmbeddersEnum.JINA5_OMNI:
         EmbedderSpec(backend="sentence_transformers", dim=2048),
         EmbeddersEnum.GEMMA_03B:

@@ -46,7 +46,7 @@ async def init_qdrant_collections(client: AsyncQdrantClient) -> None:
     Sequential on purpose: a failure names the offending collection instead of
     leaving siblings mid-flight the way `asyncio.gather` would.
     """
-    for collection in QDRANT_COLLECTIONS.values():
+    for collection in QDRANT_COLLECTIONS:
         await _ensure_collection(client, collection)
 
 

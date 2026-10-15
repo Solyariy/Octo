@@ -1,6 +1,6 @@
 # Instagram scraping knowledge
 
-Findings behind `src/link_scrapers/instagram_graphql.py`, verified live on 2026-10-03 with the test reel `https://www.instagram.com/reel/Dc-MjbqjZIs/?stkn=ODNpdXRjend4bW4z` (public reel by `im_leoc`). The technique comes from the tutorial `https://medium.com/@seotanvirbd/how-i-built-a-python-tool-that-extracts-instagram-reel-data-without-authentication-api-keys-or-0fcb35cba7b7`. Only the happy path was tested; re-verify before relying on it: Meta rotates `doc_id`s and changes response shapes without notice.
+Findings behind `../scrapers/instagram_graphql.py`, verified live on 2026-10-03 with the test reel `https://www.instagram.com/reel/Dc-MjbqjZIs/?stkn=ODNpdXRjend4bW4z` (public reel by `im_leoc`). The technique comes from the tutorial `https://medium.com/@seotanvirbd/how-i-built-a-python-tool-that-extracts-instagram-reel-data-without-authentication-api-keys-or-0fcb35cba7b7`. Only the happy path was tested; re-verify before relying on it: Meta rotates `doc_id`s and changes response shapes without notice.
 
 ## Approach
 

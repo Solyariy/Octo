@@ -9,7 +9,7 @@
 - `init_db.py` — `Base`, `get_base_metadata()` for Alembic, and `postgres_lifespan()`, the async CM yielding `(engine, async_sessionmaker)`
 - `models.py` — `UserPostgres`, `MediaFilePostgres`
 - `schemas.py` — `UserInfo`, `MediaFile` pydantic shapes returned to callers
-- `manager.py` — `PostgresManager`
+- `manager.py` — `PostgresManager` (includes `upsert_user`, used by `cli/postgres.py`)
 
 ## Local Contracts
 

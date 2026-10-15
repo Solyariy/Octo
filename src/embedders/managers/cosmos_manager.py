@@ -70,8 +70,9 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
                 token=main_settings.HF_AUTH_TOKEN.get_secret_value(),
                 **self.embedder_info.get_config(),
         )
-        self.model = AutoModel.from_pretrained(self.embedder_info.value, **kwargs
-                                               ).to(self.device, dtype=self.dtype)
+        self.model = AutoModel.from_pretrained(
+            self.embedder_info.value, **kwargs
+        ).to(self.device, dtype=self.dtype)
         self.processor = AutoProcessor.from_pretrained(self.embedder_info.value, **kwargs)
 
     def encode_text(self, texts: list[str], **kwargs) -> np.ndarray:

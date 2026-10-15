@@ -1,10 +1,13 @@
-.PHONY: server clear pg qdrant cli
+.PHONY: admin server clear pg qdrant cli
 
 # `make clear` wipes both stores; `make clear pg` / `make clear qdrant` wipes one
 CLEAR_TARGETS := $(filter pg qdrant,$(MAKECMDGOALS))
 ifeq ($(CLEAR_TARGETS),)
 CLEAR_TARGETS := pg qdrant
 endif
+
+admin:
+	uv run python -m cli.postgres $(ARGS)
 
 server:
 	docker compose up -d --wait postgres qdrant

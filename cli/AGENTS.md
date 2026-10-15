@@ -10,6 +10,7 @@
 - `threads.py` — fetches a post via `src.link_scrapers.threads.fetch_post`, prints it, downloads media to `main_settings.THREADS_TEMP_DIR_PATH / <shortcode>` (created) unless `--no-download`, `--out` dumps the raw post JSON
 - `qwen.py` — loads `QWEN3_4B`, encodes three passages, exits non-zero if the paraphrase pair is not more similar than the unrelated pair
 - `nvidia_cosmos.py` — downloads a sample clip, embeds it and six captions through `CosmosEmbeddingManager`, exits non-zero if vectors are not `output_dim`-wide or the expected caption does not rank first; its `download_video` is a smoke-test helper, production downloads belong in `src.utils.basic`
+- `postgres.py` — upserts the admin user (`--email`, default `admin@octo.local`; `--password`, default `admin`) straight into Postgres via `PostgresManager.upsert_user`; testing environments only, needs migrated tables (`alembic upgrade head`)
 - `embedder_registry.py` — prints every `EmbeddersEnum` member's backend, dim and load kwargs
 
 ## Local Contracts
@@ -23,6 +24,7 @@
 
 ## Verification
 
+- `uv run python -m cli.postgres [--email ...] [--password ...]` (`make admin [ARGS="..."]`)
 - `uv run python -m cli.embedder_registry`
 - `uv run python -m cli.qwen`
 - `uv run python -m cli.nvidia_cosmos`

@@ -81,3 +81,9 @@ class AuthManager:
             )
         access_token = cls.create_access_token(data={"sub": email})
         return Token(access_token=access_token, token_type="bearer")
+
+
+if __name__ == '__main__':
+    import uuid
+    tp = AuthManager.get_password_hash("admin")
+    print(uuid.uuid4(), tp)

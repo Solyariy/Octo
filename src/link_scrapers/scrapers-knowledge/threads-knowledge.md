@@ -1,6 +1,6 @@
 # Threads scraping knowledge
 
-Findings behind `src/link_scrapers/threads.py`, verified live on 2026-10-03 (test post `https://www.threads.com/@_mister_nine_/post/DdO_YhfEXTX`, plus a browser HAR capture of the same post). Re-verify before relying on any of it: Meta changes these internals without notice.
+Findings behind `../scrapers/threads.py`, verified live on 2026-10-03 (test post `https://www.threads.com/@_mister_nine_/post/DdO_YhfEXTX`, plus a browser HAR capture of the same post). Re-verify before relying on any of it: Meta changes these internals without notice.
 
 ## What does not work
 

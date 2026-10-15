@@ -5,6 +5,7 @@ import aiofiles
 from fastapi import APIRouter, Response
 from starlette import status
 
+from src.db.qdrant.schemas import QdrantVector
 from src.api.auth.dependencies import CurrentUserDep
 from src.api.dependencies import (
     AiohttpClientDep,
@@ -18,7 +19,6 @@ from src.embedders.models import EmbeddersEnum
 from src.settings import main_settings
 from src.utils.annotations import StrUUID
 from src.utils.basic import download_and_save_file
-from src.utils.order import get_uuid_str
 
 main_router = APIRouter()
 
@@ -31,9 +31,10 @@ async def get_health():
 @main_router.post("/save", response_model=list[StrUUID])
 async def post_save(
         data_all: list[InputMediaFile],
+        user_info: CurrentUserDep,
         pg_manager: PostgresManagerDep,
 ) -> list[StrUUID]:
-    media_files: list[MediaFile] = await pg_manager.insert_media_file_bulk(data_all)
+    media_files: list[MediaFile] = await pg_manager.insert_media_file_bulk(data_all, user_info)
     return [str(m.id) for m in media_files]
 
 
@@ -53,7 +54,7 @@ async def post_process_all(
         paths = await asyncio.gather(*[
             download_and_save_file(
                 url=data.url,
-                destination=Path(temp_dir) / f"{get_uuid_str()}.mp4",
+                destination=Path(temp_dir) / f"{data.id}.mp4",
                 aiohttp_client=aiohttp_client
             )
             for data in unprocessed_data
@@ -65,8 +66,38 @@ async def post_process_all(
                 return ve
 
         video_embeddings = await asyncio.to_thread(one_, paths)
+    video_embeddings = [
+        QdrantVector(id=d_.id, vector=v_)
+        for d_, v_ in zip(unprocessed_data, video_embeddings)
+    ]
     await qdrant_manager.upsert_vectors(
             embedder_info=EmbeddersEnum.COSMOS_EMBED1_448P, vectors=video_embeddings
     )
     await pg_manager.set_processed_true(ids=[data.id for data in unprocessed_data])
     return Response(status_code=status.HTTP_200_OK)
+
+
+@main_router.get("/find", status_code=status.HTTP_200_OK)
+async def get_find_result(
+        user_info: CurrentUserDep,
+        pg_manager: PostgresManagerDep,
+        qdrant_manager: QdrantManagerDep,
+        query: str
+):
+    embedder_info = EmbeddersEnum.COSMOS_EMBED1_448P
+    with get_embedding_manager(EmbeddersEnum.COSMOS_EMBED1_448P) as manager:
+        query_vector = manager.encode_text(query)
+    result = await qdrant_manager.find_similar(
+        embedder_info=embedder_info,
+        query_vector=query_vector
+    )
+    if not result.points:
+        return []
+
+    media_files = await pg_manager.get_media_file_by_id_bulk(ids=[p.id for p in result.points])
+    media_files_map = {f.id: f.url for f in media_files}
+    sorted_results = [
+        media_files_map[rp.id]
+        for rp in sorted(result.points, key=lambda x: x.score, reverse=True)
+    ]
+    return sorted_results

@@ -12,7 +12,7 @@ import json
 
 import aiohttp
 
-from src.link_scrapers.threads import fetch_post, resolve_shortcode
+from src.link_scrapers.scrapers.threads import fetch_post, resolve_shortcode
 from src.settings import main_settings
 
 

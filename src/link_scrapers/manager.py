@@ -3,10 +3,11 @@ import aiohttp
 from src.utils.logs import LoggerMixin
 
 
-class LinkDownloader(LoggerMixin):
+class LinkScraper(LoggerMixin):
 
     def __init__(self, aiohttp_client: aiohttp.ClientSession):
         self.aiohttp_client = aiohttp_client
 
-    def load_ig_reels(self, urls: list[str]):
+    @staticmethod
+    def classify_platform(url: str):
         pass

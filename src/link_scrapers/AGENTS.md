@@ -6,11 +6,11 @@
 
 ## Ownership
 
-- `instagram_graphql.py` — async `fetch_reel` / `fetch_reel_json` / `parse_reel_data`, the `ReelData` dataclass, `InstagramFetchError`, and `extract_shortcode`. Scrapes Instagram's public GraphQL `doc_id` endpoint: pulls a `csrftoken` cookie from a plain GET to instagram.com and replays it with the web client's `x-ig-app-id` and `doc_id`
-- `threads.py` — async `fetch_post` / `fetch_post_html` / `extract_post_json` / `parse_post` / `download_media`, the `ThreadsPost` and `MediaItem` dataclasses, `ThreadsFetchError`, `extract_shortcode`, `resolve_shortcode` (also follows `threads.com/share/<id>` links via their 302 `Location`, behind the same limiters). Scrapes the permalink HTML (`threads.com/post/<shortcode>`) for the embedded post JSON; no GraphQL, cookies or tokens (details in `scrapers-knowledge/threads-knowledge.md`)
+- `scrapers/instagram_graphql.py` — async `fetch_reel` / `fetch_reel_json` / `parse_reel_data`, the `ReelData` dataclass, `InstagramFetchError`, and `extract_shortcode`. Scrapes Instagram's public GraphQL `doc_id` endpoint: pulls a `csrftoken` cookie from a plain GET to instagram.com and replays it with the web client's `x-ig-app-id` and `doc_id`
+- `scrapers/threads.py` — async `fetch_post` / `fetch_post_html` / `extract_post_json` / `parse_post` / `download_media`, the `ThreadsPost` and `MediaItem` dataclasses, `ThreadsFetchError`, `extract_shortcode`, `resolve_shortcode` (also follows `threads.com/share/<id>` links via their 302 `Location`, behind the same limiters). Scrapes the permalink HTML (`threads.com/post/<shortcode>`) for the embedded post JSON; no GraphQL, cookies or tokens (details in `scrapers-knowledge/threads-knowledge.md`)
 - `settings.py` — `InstagramSettings` / `instagram_settings` (endpoint URL, `IG_APP_ID`, `DOC_ID`, user agent, timeout, two `aiolimiter` limiters, `MAX_ATTEMPTS`, `SHORTCODE_RE`) and `ThreadsSettings` / `threads_settings` (Safari user agent, document `Accept`, timeout, limiters, `MAX_ATTEMPTS`, `SHORTCODE_RE`, `SHARE_RE`)
 - `scrapers-knowledge/` — detailed per-platform scraping notes, one file per platform (`threads-knowledge.md`, `instagram-knowledge.md`): what was tried, what works, request/response shapes, field layouts, constants, limits. Prose reference only, no code
-- `manager.py` — `LinkDownloader`, a `LoggerMixin` stub whose `load_ig_reels` is not implemented yet
+- `manager.py` — `LinkScraper`, a `LoggerMixin` stub whose `load_ig_reels` is not implemented yet
 
 ## Local Contracts
 

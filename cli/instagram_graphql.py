@@ -12,7 +12,7 @@ import json
 
 import aiohttp
 
-from src.link_scrapers.instagram_graphql import fetch_reel
+from src.link_scrapers.scrapers.instagram_graphql import fetch_reel
 from src.settings import main_settings
 
 
