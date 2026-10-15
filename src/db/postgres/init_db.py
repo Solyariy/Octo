@@ -1,7 +1,8 @@
+import enum
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from sqlalchemy import MetaData, text
+from sqlalchemy import Enum, MetaData, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -17,6 +18,9 @@ my_metadata = MetaData()
 
 class Base(DeclarativeBase):
     metadata = my_metadata
+    type_annotation_map = {
+        enum.Enum: Enum(enum.Enum, values_callable=lambda e: [m.value for m in e]),
+    }
 
 
 def get_base_metadata() -> MetaData:
@@ -34,13 +38,13 @@ async def postgres_lifespan(
     left undisposed raises "Event loop is closed" during interpreter teardown.
     """
     engine = create_async_engine(
-            db_settings.POSTGRES_URL,
-            echo=db_settings.POSTGRES_ECHO,
-            pool_size=db_settings.POSTGRES_POOL_SIZE,
-            max_overflow=db_settings.POSTGRES_MAX_OVERFLOW,
-            pool_timeout=db_settings.POSTGRES_POOL_TIMEOUT,
-            pool_recycle=db_settings.POSTGRES_POOL_RECYCLE,
-            pool_pre_ping=db_settings.POSTGRES_POOL_PRE_PING,
+        db_settings.POSTGRES_URL,
+        echo=db_settings.POSTGRES_ECHO,
+        pool_size=db_settings.POSTGRES_POOL_SIZE,
+        max_overflow=db_settings.POSTGRES_MAX_OVERFLOW,
+        pool_timeout=db_settings.POSTGRES_POOL_TIMEOUT,
+        pool_recycle=db_settings.POSTGRES_POOL_RECYCLE,
+        pool_pre_ping=db_settings.POSTGRES_POOL_PRE_PING,
     )
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     try:

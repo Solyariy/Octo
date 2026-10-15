@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.postgres.init_db import Base
-from src.enums import Platform
+from src.enums import Platform, ProcessingStatus
 
 
 class UserPostgres(Base):
@@ -30,7 +30,7 @@ class PostPostgres(Base):
     url: Mapped[str] = mapped_column(unique=True)
     platform: Mapped[Platform]
     # is_processed: Mapped[bool] = mapped_column(default=False, server_default=false())
-    status: Mapped[]
+    status: Mapped[ProcessingStatus]
     user_id: Mapped[uuid.UUID] = mapped_column(
             PG_UUID(as_uuid=True),
             ForeignKey("users.id"),
