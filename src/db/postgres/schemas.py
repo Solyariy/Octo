@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from src.enums import Platform, ProcessingStatus
+
 
 class UserInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True, extra="ignore")
@@ -23,6 +25,7 @@ class Post(BaseModel):
 
     id: UUID
     user_id: UUID
-    is_processed: bool
     url: str
+    platform: Platform
+    status: ProcessingStatus
     created_at: datetime

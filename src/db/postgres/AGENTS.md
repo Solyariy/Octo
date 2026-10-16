@@ -2,20 +2,21 @@
 
 ## Purpose
 
-- Relational storage for users and submitted media files, over SQLAlchemy async with asyncpg
+- Relational storage for users and submitted posts, over SQLAlchemy async with asyncpg
 
 ## Ownership
 
 - `init_db.py` — `Base`, `get_base_metadata()` for Alembic, and `postgres_lifespan()`, the async CM yielding `(engine, async_sessionmaker)`
-- `models.py` — `UserPostgres`, `PostPostgres`
-- `schemas.py` — `UserInfo`, `Post` pydantic shapes returned to callers
-- `manager.py` — `PostgresManager` (includes `upsert_user`, used by `cli/postgres.py`)
+- `models.py` — `UserPostgres`, `PostPostgres` (`posts` table: `url`, `platform`, `status: ProcessingStatus`, `user_id`)
+- `schemas.py` — `UserInfo`, `Post`, `PostIdUrl` pydantic shapes returned to callers
+- `manager.py` — `PostgresManager`: user queries (`upsert_user` is used by `cli/postgres.py`), `insert_posts_bulk`, `claim_pending_posts`, `set_status`, `get_media_file_by_id_bulk`
 
 ## Local Contracts
 
 - Settings: `POSTGRES_URL`, `POSTGRES_ECHO`, and the `POSTGRES_POOL_*` / `POSTGRES_MAX_OVERFLOW` family in `db_settings`. Storage is the `pgdata` compose volume
 - `PostgresManager` takes an `async_sessionmaker` and opens one short-lived session per statement; it rolls back and re-raises on failure. Add query methods here rather than opening sessions in call sites
 - Concurrency is capped by the engine pool (`POSTGRES_POOL_SIZE=10`, `MAX_OVERFLOW=0`), never by a semaphore: an `asyncio.Semaphore` binds permanently to the first event loop that contends on it, breaking any later `asyncio.run()` in the same process. Pool exhaustion raises `TimeoutError` after `POSTGRES_POOL_TIMEOUT` rather than blocking forever
+- Post status lifecycle: `PENDING` on insert → `IN_PROCESS` only via `claim_pending_posts` (a single `UPDATE ... RETURNING`, so concurrent callers never claim the same row) → `SUCCESS`/`FAILED` via `set_status`. Never select-then-update to claim
 - Do not give routes a request-scoped session. `POST /process/all` downloads media and runs blocking inference mid-request; a session held across that would pin a pooled connection idle-in-transaction and deadlock the service at `POSTGRES_POOL_SIZE` concurrent requests
 - `postgres_lifespan()` runs `SELECT 1` on entry because `create_async_engine` connects lazily; without it a bad `POSTGRES_URL` would only surface on the first request
 - `Base` is a plain `DeclarativeBase`, not `MappedAsDataclass`: `mapped_column` must not use dataclass-only arguments (`default_factory`, `init`, `kw_only`) — use `default` for Python-side values and `server_default` for DB-side ones

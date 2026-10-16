@@ -7,10 +7,11 @@
 ## Ownership
 
 - Owns `main.py` (FastAPI app, `lifespan`, uvicorn entrypoint), `settings.py` (`MainSettings`, `DBSettings`, `LOG_ID`) and `enums.py` (shared `StrEnum`s, e.g. `Platform`)
-- Owns cross-package conventions listed below; delegates domain detail to `api/`, `db/`, `embedders/`, `link_scrapers/`, `utils/`
+- Owns cross-package conventions listed below; delegates domain detail to `api/`, `db/`, `embedders/`, `link_scrapers/`, `services/`, `utils/`
 
 ## Local Contracts
 
+- `main.py` registers `src.api.middleware.trace_requests`, which binds one `LOG_ID` per request; every log line, background task and offloaded thread of that request shares it
 - `src` is an import package rooted at the repository root: always use absolute imports (`from src.utils.logs import LoggerMixin`), never relative
 - Modules are importable from the repository root with no `sys.path` manipulation. No CLI `main()`, `argparse` or `__main__` blocks here except the server entrypoint in `main.py`; hand-run scripts go in `cli/` (see `cli/AGENTS.md`)
 - Configuration comes from pydantic-settings classes reading `.env`; secrets are never hardcoded. `MainSettings` has no defaults for `HF_AUTH_TOKEN`, `SECRET_KEY`, `ALGORITHM` and `ACCESS_TOKEN_EXPIRE_MINUTES`, so importing `src.settings` fails without a `.env` supplying all four
@@ -23,7 +24,7 @@
 ## Work Guidance
 
 - Async is the default for I/O (asyncpg, SQLAlchemy async, `AsyncQdrantClient`, aiohttp, aiofiles); model loading and inference in `embedders/` is synchronous and blocking, so routes offload it with `asyncio.to_thread`
-- Authentication settings exist in `MainSettings` but no token issuing or verification is implemented; `get_current_user` currently trusts a `user_id` supplied by the caller. Do not describe any endpoint as authenticated
+- `src.api.auth` issues JWTs at `POST /auth/token`; `get_current_user` decodes the bearer token and loads the user, so `CurrentUserDep` routes require a token
 
 ## Verification
 
@@ -36,4 +37,5 @@
 - `db/AGENTS.md` — shared datastore rules; delegates to `db/postgres/AGENTS.md` and `db/qdrant/AGENTS.md`
 - `embedders/AGENTS.md` — embedding model registry, backend managers, manual model checks
 - `link_scrapers/AGENTS.md` — resolving social-media URLs (Instagram, Threads) to fetchable media
+- `services/AGENTS.md` — `OmniPipeline`, the post-processing flow behind `POST /process/all`
 - `utils/AGENTS.md` — logging, type annotations, download and video helpers

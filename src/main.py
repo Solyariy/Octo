@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from src.api.auth.router import auth_router
+from src.api.middleware import trace_requests
 from src.api.router import main_router
 from src.db.postgres.init_db import postgres_lifespan
 from src.db.qdrant.init_db import init_qdrant_collections, qdrant_client_lifespan
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.middleware("http")(trace_requests)
 
 app.include_router(router=main_router)
 app.include_router(router=auth_router, prefix="/auth", tags=["Auth"])

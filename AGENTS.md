@@ -89,7 +89,8 @@ Default section order:
 - `docker compose up --build` brings up three services: `app` (`:8000`), `postgres` (`:5432`), and `qdrant` (`:6333`/`:6334`)
 - Postgres schema lives in `src/db/postgres/models.py` and changes only through Alembic revisions under `alembic/versions/<year>/<month>/`
 - Downloaded models live in `MODELS_PATH` (`<repo>/models`), Qdrant data in `./qdrant_data`, and per-request scratch files in `TEMP_DIR_PATH` (`<repo>/temp`); all three are local caches, never version them
-- `transformers` stays pinned to `>=4.51,<5` and `torchcodec` stays uninstalled; both are required by the embedding stack (see `src/embedders/AGENTS.md`)
+- The main env pins `transformers>=5.18` and `sentence-transformers>=6.1` for EmbeddingGemma 2, the service's embedding model; `torchcodec` stays uninstalled (see `src/embedders/AGENTS.md`)
+- Cosmos-Embed1 only loads on transformers 4.x, so it runs only from a separate, gitignored `.venv-cosmos`: `uv venv .venv-cosmos --python 3.13`, then `uv pip install --python .venv-cosmos -r pyproject.toml --override <(printf 'transformers>=4.51,<5\nsentence-transformers>=5.6,<6\n')`, then `.venv-cosmos/bin/python -m cli.nvidia_cosmos`. Never install those overrides into `.venv`
 - The project is early-stage: `README.md` is empty, no test runner, type checker, or CI exists. Do not cite checks that are not configured
 - Formatting is `uv run yapf -ir src alembic cli` (`[tool.yapf]`, PEP 8 base, 100 cols, 8-space continuation indent with dedented closing brackets); ruff only lints (`uv run ruff check`) and its `--fix` is limited to import sorting and unused-import removal (`I`, `F401`); `ruff format` is disabled via `exclude = ["*"]`. Order: `ruff check --fix`, then `yapf`
 - `.idea/` is JetBrains state, not project material; leave it alone
@@ -100,7 +101,7 @@ When the user requests a durable behavior change, record it here or in the relev
 
 ## Child DOX Index
 
-- `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `api`/`db`/`embedders`/`link_scrapers`/`utils` packages below it
+- `src/AGENTS.md` — all application code: FastAPI entrypoint, settings, and the `api`/`db`/`embedders`/`link_scrapers`/`services`/`utils` packages below it
 - `alembic/AGENTS.md` — Postgres migration environment, revision layout, and the generate/apply workflow
 - `cli/AGENTS.md` — every hand-run CLI and smoke-test script; CLI entrypoints never live in `src`
 - Root owns packaging (`pyproject.toml`, `uv.lock`), the `Makefile` (dev shortcuts), containerization (`Dockerfile`, `docker-compose.yml`, `.dockerignore`), `alembic.ini`, ignore files, and `README.md`

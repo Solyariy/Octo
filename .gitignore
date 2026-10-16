@@ -5,6 +5,7 @@ temp/
 .idea
 qdrant_data
 models/
+.venv-cosmos/
 
 
 # Byte-compiled / optimized / DLL files

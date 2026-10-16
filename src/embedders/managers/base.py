@@ -28,6 +28,10 @@ class BaseEmbeddingManager(LoggerMixin, ABC):
     def encode_text(self, texts: list[str], **kwargs):
         """Return one `output_dim` vector per text."""
 
+    def encode_image(self, images, **kwargs):
+        """Return one `output_dim` vector per image, for backends that have a vision tower."""
+        raise NotImplementedError(f"{type(self).__name__} does not support image embeddings")
+
     def encode_video(self, videos, **kwargs):
         """Return one `output_dim` vector per clip, for backends that have a video tower."""
         raise NotImplementedError(f"{type(self).__name__} does not support video embeddings")

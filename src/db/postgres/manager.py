@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from src.api.schemas import InputPost
 from src.db.postgres.models import PostPostgres, UserPostgres
 from src.db.postgres.schemas import Post, PostIdUrl, UserInfo
+from src.enums import ProcessingStatus
 from src.utils.annotations import StrUUID
 from src.utils.logs import LoggerMixin
 
@@ -64,51 +65,76 @@ class PostgresManager(LoggerMixin):
 
     async def upsert_user(self, email: str, hashed_password: str) -> UserInfo:
         stmt = (
-            insert(UserPostgres).values(
-                email=email, hashed_password=hashed_password
-            ).on_conflict_do_update(
-                index_elements=[UserPostgres.email],
-                set_={"hashed_password": hashed_password},
-            ).returning(UserPostgres)
+                insert(UserPostgres).values(email=email,
+                                            hashed_password=hashed_password).on_conflict_do_update(
+                                                    index_elements=[UserPostgres.email],
+                                                    set_={
+                                                            "hashed_password": hashed_password
+                                                    },
+                                            ).returning(UserPostgres)
         )
         res = await self.__exec(stmt, commit=True)
         return UserInfo.model_validate(res.scalar_one())
 
-    async def insert_media_file_bulk(self, media_files: list[InputPost], user_info: UserInfo) -> list[Post]:
+    async def insert_posts_bulk(self, posts: list[InputPost], user_info: UserInfo) -> list[Post]:
+        """Insert as `PENDING`; urls that already exist are skipped and absent from the result."""
         stmt = (
-            insert(PostPostgres).values(
-                [
-                    {
-                        **mf.model_dump(mode="json"),
-                        "user_id": user_info.id
-                    }
-                    for mf in media_files
-                ]
-            ).on_conflict_do_nothing().returning(PostPostgres)
+                insert(PostPostgres).values(
+                        [
+                                {
+                                        "url": post.url,
+                                        "platform": post.platform,
+                                        "status": ProcessingStatus.PENDING,
+                                        "user_id": user_info.id,
+                                } for post in posts
+                        ]
+                ).on_conflict_do_nothing().returning(PostPostgres)
         )
         res = await self.__exec(stmt, commit=True)
-        return [Post.model_validate(r) for r in res.scalars()]
-
-    async def get_unprocessed_media_files(self, user_id: StrUUID) -> list[Post]:
-        stmt = (
-            select(PostPostgres).where(
-                PostPostgres.user_id == user_id
-            ).where(PostPostgres.is_processed == False)
+        inserted = [Post.model_validate(r) for r in res.scalars()]
+        self.log_info(
+                "Posts inserted",
+                user_id=str(user_info.id),
+                received=len(posts),
+                inserted=len(inserted),
+                skipped_duplicates=len(posts) - len(inserted),
         )
-        res = await self.__exec(stmt, commit=False)
-        return [Post.model_validate(r) for r in res.scalars()]
+        return inserted
 
-    async def set_processed_true(self, ids: list[StrUUID]):
+    async def claim_pending_posts(self, user_id: StrUUID) -> list[Post]:
+        """Atomically move the user's `PENDING` posts to `IN_PROCESS` and return them.
+
+        One `UPDATE ... RETURNING`, so concurrent callers can never claim the same row.
+        """
         stmt = (
-            update(PostPostgres).where(
-                PostPostgres.id.in_(ids)
-            ).values(is_processed=True)
+                update(PostPostgres).where(
+                        PostPostgres.user_id == user_id,
+                        PostPostgres.status == ProcessingStatus.PENDING,
+                ).values(status=ProcessingStatus.IN_PROCESS).returning(PostPostgres)
         )
+        res = await self.__exec(stmt, commit=True)
+        claimed = [Post.model_validate(r) for r in res.scalars()]
+        self.log_info(
+                "Pending posts claimed",
+                user_id=str(user_id),
+                count=len(claimed),
+                post_ids=[str(p.id) for p in claimed],
+        )
+        return claimed
+
+    async def set_status(self, ids: list[StrUUID], status: ProcessingStatus) -> None:
+        if not ids:
+            return
+        stmt = update(PostPostgres).where(PostPostgres.id.in_(ids)).values(status=status)
         await self.__exec(stmt, commit=True)
+        self.log_info(
+                "Post status updated",
+                status=status,
+                count=len(ids),
+                post_ids=[str(i) for i in ids]
+        )
 
     async def get_media_file_by_id_bulk(self, ids: list[StrUUID]) -> list[PostIdUrl]:
-        stmt = select(PostPostgres.id, PostPostgres.url).where(
-            PostPostgres.id.in_(ids)
-        )
+        stmt = select(PostPostgres.id, PostPostgres.url).where(PostPostgres.id.in_(ids))
         res = await self.__exec(stmt, commit=False)
-        return [PostIdUrl.model_validate(r) for r in res.scalars()]
+        return [PostIdUrl.model_validate(r) for r in res.all()]

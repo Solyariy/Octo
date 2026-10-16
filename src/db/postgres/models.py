@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, false, func
+from sqlalchemy import ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -13,7 +13,7 @@ class UserPostgres(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(
-            PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     email: Mapped[str] = mapped_column(unique=True)
     hashed_password: Mapped[str]
@@ -23,15 +23,15 @@ class PostPostgres(Base):
     __tablename__ = "posts"
 
     id: Mapped[uuid.UUID] = mapped_column(
-            PG_UUID(as_uuid=True),
-            primary_key=True,
-            default=uuid.uuid4,
+        PG_UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
     )
     url: Mapped[str] = mapped_column(unique=True)
     platform: Mapped[Platform]
-    status: Mapped[ProcessingStatus]
+    status: Mapped[ProcessingStatus] = mapped_column(default=ProcessingStatus.PENDING)
     user_id: Mapped[uuid.UUID] = mapped_column(
-            PG_UUID(as_uuid=True),
-            ForeignKey("users.id"),
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id"),
     )
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

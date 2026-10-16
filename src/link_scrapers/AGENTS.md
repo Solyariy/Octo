@@ -23,7 +23,7 @@
 - Threads only embeds the post JSON for browser-like navigations: keep the Safari `user-agent` and document `accept` header in `fetch_post_html`. Otherwise it serves a shell page and `extract_post_json` raises `ThreadsFetchError`. Every Threads GET passes through its own `SECONDS_LIMITER` (1 per 5 s) and `HOUR_LIMITER` (120 per hour); retries mirror the Instagram rule
 - `fetch_post` returns text, author, counts and `MediaItem`s (carousel children, else the single largest video/image); it never downloads. `download_media(post, directory, session)` saves `NN.<ext>` files and sets `local_path`. CDN URLs expire, so download right after fetching. Replies and thread continuations are not scraped
 - Detailed platform-specific information (endpoints, headers, request/response structure, field layouts, constants, failed approaches, test findings) goes into the matching file in `scrapers-knowledge/` (create `<platform>-knowledge.md` for a new platform), not into this file or code comments. Keep only the short operating rules here and update the knowledge file whenever a scraper's behavior or a verified finding changes
-- Nothing here is wired into `src.api` yet
+- Consumers: `src.api.schemas.InputPost` validates urls with `classify_platform`, and `src.services.omni_pipeline.OmniPipeline` scrapes with `scrap_bulk`. `scrap_bulk` returns exceptions in place, so callers own per-url error handling
 
 ## Work Guidance
 

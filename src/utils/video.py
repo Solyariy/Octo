@@ -38,3 +38,16 @@ def sample_frames(path: Path | str, num_frames: int) -> np.ndarray:
         raise RuntimeError(f"Could not decode frame indices {missing} from {path}")
 
     return np.stack([decoded[i] for i in wanted])
+
+
+def video_duration(path: Path | str) -> float:
+    """Length of the first video stream in seconds, from the container header when present."""
+    with av.open(str(path)) as container:
+        stream = container.streams.video[0]
+        if stream.duration is not None and stream.time_base is not None:
+            return float(stream.duration * stream.time_base)
+        if container.duration is not None:
+            return container.duration / av.time_base
+        if stream.frames and stream.average_rate:
+            return float(stream.frames / stream.average_rate)
+    raise RuntimeError(f"Cannot determine the duration of {path}")

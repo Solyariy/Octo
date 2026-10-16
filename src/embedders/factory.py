@@ -1,11 +1,13 @@
 from src.embedders.managers.base import BaseEmbeddingManager
 from src.embedders.managers.cosmos_manager import CosmosEmbeddingManager
 from src.embedders.managers.hf_manager import GeneralEmbeddingManager
+from src.embedders.managers.omni_manager import OmniEmbeddingManager
 from src.embedders.models import Backend, EmbeddersEnum
 
 MANAGERS: dict[Backend, type[BaseEmbeddingManager]] = {
         "sentence_transformers": GeneralEmbeddingManager,
         "cosmos": CosmosEmbeddingManager,
+        "omni": OmniEmbeddingManager,
 }
 
 

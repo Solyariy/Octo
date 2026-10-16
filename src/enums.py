@@ -16,3 +16,9 @@ class ProcessingStatus(StrEnum):
     IN_PROCESS = "in_process"
     SUCCESS = "success"
     FAILED = "failed"
+
+
+class Modality(StrEnum):
+    TEXT = "text"
+    IMAGE = "image"
+    VIDEO = "video"

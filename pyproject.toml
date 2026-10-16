@@ -32,13 +32,15 @@ dependencies = [
     "pypdfium2>=5.11.0",
     "python-multipart>=0.0.32",
     "qdrant-client[fastembed]>=1.13.0",
-    "sentence-transformers>=5.6.0",
+    # EmbeddingGemma 2 multimodal dict inputs need sentence-transformers 6.1.
+    "sentence-transformers>=6.1.0",
     "soundfile>=0.14.0",
     "sqlalchemy[asyncio]>=2.0.0",
     "structlog>=26.1.0",
     "torchvision>=0.28.0",
-    # Cosmos-Embed1's trust_remote_code implementation does not load on transformers 5.
-    "transformers>=4.51,<5",
+    # EmbeddingGemma 2 (Gemma 4 based) needs transformers 5.18. Cosmos-Embed1 does not load on
+    # transformers 5, so it runs only from the separate `.venv-cosmos` (see AGENTS.md).
+    "transformers>=5.18",
     "uvloop>=0.22.1",
     "yt-dlp>=2026.8.19",
 ]

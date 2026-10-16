@@ -1,8 +1,7 @@
-import asyncio
-from pathlib import Path
+from typing import Annotated
 
-import aiofiles
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, BackgroundTasks, Response
+from pydantic import Field
 from starlette import status
 
 from src.api.auth.dependencies import CurrentUserDep
@@ -12,13 +11,11 @@ from src.api.dependencies import (
     QdrantManagerDep,
 )
 from src.api.schemas import InputPost
-from src.db.postgres.schemas import Post
-from src.db.qdrant.schemas import QdrantVector
-from src.embedders.factory import get_embedding_manager
-from src.embedders.models import EmbeddersEnum
-from src.settings import main_settings
+from src.services.omni_pipeline import OmniPipeline
+from src.services.schemas import ProcessingAccepted
 from src.utils.annotations import StrUUID
-from src.utils.basic import download_and_save_file
+from src.utils.logs import Logger
+from src.utils.order import get_log_id
 
 main_router = APIRouter()
 
@@ -30,74 +27,48 @@ async def get_health():
 
 @main_router.post("/save", response_model=list[StrUUID])
 async def post_save(
-        data_all: list[InputPost],
+        posts: Annotated[list[InputPost], Field(min_length=1)],
         user_info: CurrentUserDep,
         pg_manager: PostgresManagerDep,
 ) -> list[StrUUID]:
-    media_files: list[Post] = await pg_manager.insert_media_file_bulk(data_all, user_info)
-    return [str(m.id) for m in media_files]
+    Logger.info(
+        "Saving posts",
+        user_id=str(user_info.id),
+        count=len(posts),
+        platforms=sorted(
+            {
+                p.platform
+                for p in posts
+            }
+        ),
+    )
+    inserted = await pg_manager.insert_posts_bulk(posts, user_info)
+    return [str(p.id) for p in inserted]
 
 
-@main_router.post("/process/all", status_code=status.HTTP_200_OK)
+@main_router.post(
+    "/process/all",
+    response_model=ProcessingAccepted,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def post_process_all(
+        response: Response,
+        background_tasks: BackgroundTasks,
         user_info: CurrentUserDep,
         pg_manager: PostgresManagerDep,
+        qdrant_manager: QdrantManagerDep,
         aiohttp_client: AiohttpClientDep,
-        qdrant_manager: QdrantManagerDep,
-):
-    unprocessed_data = await pg_manager.get_unprocessed_media_files(user_id=user_info.id)
-    if not unprocessed_data:
-        return Response(status_code=status.HTTP_200_OK)
-    async with aiofiles.tempfile.TemporaryDirectory(
-            prefix=str(main_settings.TEMP_DIR_PATH) + "/"
-    ) as temp_dir:
-        paths = await asyncio.gather(*[
-            download_and_save_file(
-                url=data.url,
-                destination=Path(temp_dir) / f"{data.id}.mp4",
-                aiohttp_client=aiohttp_client
-            )
-            for data in unprocessed_data
-        ])
+) -> ProcessingAccepted:
+    posts = await pg_manager.claim_pending_posts(user_id=user_info.id)
+    accepted = ProcessingAccepted(log_id=get_log_id(), post_ids=[str(p.id) for p in posts])
+    if not posts:
+        Logger.info("No pending posts to process", user_id=str(user_info.id))
+        response.status_code = status.HTTP_200_OK
+        return accepted
 
-        def one_(paths_):
-            with get_embedding_manager(EmbeddersEnum.COSMOS_EMBED1_448P) as manager:
-                ve = manager.encode_video(paths_)
-                return ve
-
-        video_embeddings = await asyncio.to_thread(one_, paths)
-    video_embeddings = [
-        QdrantVector(id=d_.id, vector=v_)
-        for d_, v_ in zip(unprocessed_data, video_embeddings)
-    ]
-    await qdrant_manager.upsert_vectors(
-            embedder_info=EmbeddersEnum.COSMOS_EMBED1_448P, vectors=video_embeddings
+    pipeline = OmniPipeline(
+        pg_manager=pg_manager, qdrant_manager=qdrant_manager, aiohttp_client=aiohttp_client
     )
-    await pg_manager.set_processed_true(ids=[data.id for data in unprocessed_data])
-    return Response(status_code=status.HTTP_200_OK)
-
-
-@main_router.get("/find", status_code=status.HTTP_200_OK)
-async def get_find_result(
-        user_info: CurrentUserDep,
-        pg_manager: PostgresManagerDep,
-        qdrant_manager: QdrantManagerDep,
-        query: str
-):
-    embedder_info = EmbeddersEnum.COSMOS_EMBED1_448P
-    with get_embedding_manager(EmbeddersEnum.COSMOS_EMBED1_448P) as manager:
-        query_vector = manager.encode_text(query)
-    result = await qdrant_manager.find_similar(
-        embedder_info=embedder_info,
-        query_vector=query_vector
-    )
-    if not result.points:
-        return []
-
-    media_files = await pg_manager.get_media_file_by_id_bulk(ids=[p.id for p in result.points])
-    media_files_map = {f.id: f.url for f in media_files}
-    sorted_results = [
-        media_files_map[rp.id]
-        for rp in sorted(result.points, key=lambda x: x.score, reverse=True)
-    ]
-    return sorted_results
+    background_tasks.add_task(pipeline.run, posts, user_info)
+    Logger.info("Processing scheduled", user_id=str(user_info.id), posts=len(posts))
+    return accepted

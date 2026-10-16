@@ -33,7 +33,7 @@ class GeneralEmbeddingManager(BaseEmbeddingManager):
         model = SentenceTransformer(
                 self.embedder_info.value,
                 **self.embedder_info.get_config(),
-                use_auth_token=main_settings.HF_AUTH_TOKEN.get_secret_value()
+                token=main_settings.HF_AUTH_TOKEN.get_secret_value()
         )
 
         # Save atomically: write to a sibling .part dir, then move into place.

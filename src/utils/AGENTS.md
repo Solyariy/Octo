@@ -11,7 +11,7 @@
 - `annotations.py` — `StrUUID`, `LocalFilePath`, `Timestamp` pydantic-annotated `NewType`s
 - `basic.py` — `download_file` and `download_and_save_file`, aiohttp downloads that stream to disk with aiofiles
 - `models.py` — `pick_device`, the torch device/dtype choice shared by every model backend
-- `video.py` — `sample_frames`, PyAV frame sampling for video models
+- `video.py` — `sample_frames` (PyAV frame sampling) and `video_duration` (stream length in seconds) for video models
 - `tenacity_logs.py` — `tenacity_log_before` / `tenacity_log_before_sleep` / `tenacity_log_after`, tenacity retry hooks that log each attempt through `Logger`
 
 ## Local Contracts
@@ -22,7 +22,7 @@
 - Classes log via `LoggerMixin`, which prefixes `[ClassName]` and passes `increase_depth=2`; free functions call `Logger.info/debug/warning/error` directly
 - `Logger` methods are wrapped by `inject_traceback`, which walks the caller frame to attach `(file, line)` — any new log level must keep the `increase_depth` contract or locations will point at the wrong frame
 - `Logger.error` always attaches `traceback.format_exc()`, so call it from inside an `except` block
-- Every log line carries `log_id` from `get_log_id()`, which lazily fills the `LOG_ID` ContextVar defined in `src.settings`; set it per request to correlate a trace
+- Every log line carries `log_id` from `get_log_id()`, which lazily fills the `LOG_ID` ContextVar defined in `src.settings`; `src.api.middleware.trace_requests` sets it per HTTP request (from `X-Request-ID`), so one request's logs, background tasks and `to_thread` work share one id
 - `models.py` and `video.py` may import torch and PyAV, but must stay model-agnostic: no HuggingFace model ids, no manager classes
 
 ## Work Guidance

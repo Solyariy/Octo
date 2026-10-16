@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
 
-Backend = Literal["sentence_transformers", "cosmos"]
+Backend = Literal["sentence_transformers", "cosmos", "omni"]
 
 
 @dataclass(frozen=True)
@@ -22,9 +22,10 @@ class EmbedderSpec:
 class EmbeddersEnum(str, Enum):
     QWEN3_8B = "Qwen/Qwen3-Embedding-8B"
     QWEN3_4B = "Qwen/Qwen3-Embedding-4B"
-    QWEN3_06B ="Qwen/Qwen3-Embedding-0.6B"
+    QWEN3_06B = "Qwen/Qwen3-Embedding-0.6B"
     JINA5_OMNI = "jinaai/jina-embeddings-v5-omni-small"
     GEMMA_03B = "google/embeddinggemma-300m"
+    GEMMA2_OMNI = "google/embeddinggemma-2"
     COSMOS_EMBED1_448P = "nvidia/Cosmos-Embed1-448p"
 
     def get_spec(self) -> EmbedderSpec:
@@ -53,6 +54,13 @@ EMBEDDING_MODEL_CONFIG: dict[EmbeddersEnum, EmbedderSpec] = {
         EmbedderSpec(backend="sentence_transformers", dim=768),
         EmbeddersEnum.COSMOS_EMBED1_448P:
         EmbedderSpec(backend="cosmos", dim=768),
+        # Text, image and video share one space; the audio encoder (300M) is never loaded.
+        EmbeddersEnum.GEMMA2_OMNI:
+        EmbedderSpec(
+                backend="omni", dim=768, load_kwargs={"config_kwargs": {
+                        "audio_config": None
+                }}
+        ),
 }
 
 _unregistered = [member.name for member in EmbeddersEnum if member not in EMBEDDING_MODEL_CONFIG]

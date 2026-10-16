@@ -2,7 +2,7 @@
 
 Run with:
 
-    uv run python -m cli.nvidia_cosmos
+    .venv-cosmos/bin/python -m cli.nvidia_cosmos  # transformers 4.x venv, see AGENTS.md
 
 Ranks six captions against a sample clip through `CosmosEmbeddingManager`, so it
 also exercises the shared video/text space: both sides come back as 768-d
