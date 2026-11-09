@@ -8,6 +8,7 @@
 
 - `instagram_graphql.py` — fetches a reel/post via `src.link_scrapers.instagram_graphql.fetch_reel`, prints it, saves the video to `main_settings.INSTAGRAM_TEMP_DIR_PATH / "test.mp4"` (does not create the directory), `--out` dumps the raw JSON
 - `threads.py` — fetches a post via `src.link_scrapers.scrapers.threads.fetch_post`, prints it, downloads media via `download_media` to `main_settings.THREADS_TEMP_DIR_PATH / <shortcode>` (created) unless `--no-download`, `--out` dumps the raw post JSON
+- `youtube.py` — fetches a video via `src.link_scrapers.scrapers.youtube.fetch_video`, downloads it via `download_video` to `main_settings.YOUTUBE_TEMP_DIR_PATH / <id>.<ext>` (created) unless `--no-download`, then prints title, channel, counts, resolution and description; `--out` dumps the raw yt-dlp info; exits 1 on `YouTubeFetchError`
 - `link_scraper.py` — classifies the url and scrapes it via `src.link_scrapers.manager.LinkScraper.scrap`, prints the platform and the normalized `ScrapedPost` JSON, `--out` dumps that JSON; exits 1 on an unsupported url or a platform fetch error. No media download
 - `embeddinggemma.py` — embeds a sample clip, a sample photo and four captions in one `OmniEmbeddingManager.encode_inputs` call; exits non-zero unless vectors are `output_dim`-wide and the clip and the photo each rank their own caption first. Reuses `download_video` from `nvidia_cosmos.py`
 - `qwen.py` — loads `QWEN3_4B`, encodes three passages, exits non-zero if the paraphrase pair is not more similar than the unrelated pair
@@ -34,6 +35,7 @@
 - `uv run python -m cli.instagram_graphql <reel-url> [--out raw.json]`
 - `uv run python -m cli.threads <post-url-or-shortcode> [--out raw.json] [--no-download]`
 - `uv run python -m cli.link_scraper <instagram-or-threads-url> [--out post.json]`
-- `make cli <instagram|threads|link> "<url>" [ARGS="..."]` is the root `Makefile` shortcut for the three scraper scripts above; a new scraper script needs a `CLI_MODULE_<platform>` line there
+- `uv run python -m cli.youtube <video-url-or-id> [--out raw.json] [--no-download]`
+- `make cli <instagram|threads|link|youtube> "<url>" [ARGS="..."]` is the root `Makefile` shortcut for the four scraper scripts above; a new scraper script needs a `CLI_MODULE_<platform>` line there
 
 ## Child DOX Index

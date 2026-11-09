@@ -17,6 +17,7 @@ class MainSettings(BaseSettings):
     TEMP_DIR_PATH: Path = ROOT_PATH / "temp"
     INSTAGRAM_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "instagram"
     THREADS_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "threads"
+    YOUTUBE_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "youtube"
 
     HF_AUTH_TOKEN: SecretStr
 

@@ -42,3 +42,28 @@ class ThreadsSettings(BaseSettings):
 
 
 threads_settings = ThreadsSettings()
+
+
+class YouTubeSettings(BaseSettings):
+    model_config = SettingsConfigDict(arbitrary_types_allowed=True)
+
+    # avc1 video + m4a audio merged into one mp4 by the imageio-ffmpeg binary; PyAV decodes it.
+    FORMAT: str = (
+            "bv*[height<=480][ext=mp4][vcodec^=avc1]+ba[ext=m4a]/b[height<=480][ext=mp4]"
+            "/bv*[height<=480]+ba/b[height<=480]"
+    )
+    MERGE_OUTPUT_FORMAT: str = "mp4"
+    # yt-dlp solves YouTube's JS challenges with the first runtime found on PATH; it only
+    # enables deno by default, so node (Homebrew) is listed too. Solver scripts: `yt-dlp-ejs`.
+    JS_RUNTIMES: dict[str, dict] = {"deno": {}, "node": {}}
+    SOCKET_TIMEOUT: float = 20
+    RETRIES: int = 3
+    SECONDS_LIMITER: aiolimiter.AsyncLimiter = aiolimiter.AsyncLimiter(1, 2)
+    HOUR_LIMITER: aiolimiter.AsyncLimiter = aiolimiter.AsyncLimiter(120, 3600)
+    VIDEO_ID_RE: re.Pattern = re.compile(
+            r"(?:youtube\.com/(?:watch\?(?:.*&)?v=|shorts/|live/|embed/)|youtu\.be/)"
+            r"([A-Za-z0-9_-]{11})"
+    )
+
+
+youtube_settings = YouTubeSettings()

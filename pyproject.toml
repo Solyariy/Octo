@@ -42,7 +42,7 @@ dependencies = [
     # transformers 5, so it runs only from the separate `.venv-cosmos` (see AGENTS.md).
     "transformers>=5.18",
     "uvloop>=0.22.1",
-    "yt-dlp>=2026.8.19",
+    "yt-dlp[default]>=2026.8.19",
 ]
 
 [dependency-groups]
