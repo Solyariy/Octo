@@ -5,7 +5,7 @@ from grpc import RpcError
 from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.http.exceptions import UnexpectedResponse
 
-from src.db.qdrant.models import PAYLOAD_INDEX_FIELDS, QDRANT_COLLECTIONS, QdrantCollection
+from src.db.qdrant.models import PAYLOAD_INDEXES, QDRANT_COLLECTIONS, QdrantCollection
 from src.settings import db_settings
 from src.utils.logs import Logger
 
@@ -60,13 +60,8 @@ async def _ensure_collection(client: AsyncQdrantClient, collection: QdrantCollec
                     collection_name=collection.collection_name,
                     vectors_config=collection.vectors_config,
             )
-            for field_name in PAYLOAD_INDEX_FIELDS:
-                await client.create_payload_index(
-                        collection_name=collection.collection_name,
-                        field_name=field_name,
-                        field_schema=models.PayloadSchemaType.KEYWORD,
-                )
             Logger.info("Created Qdrant collection", collection=collection.collection_name)
+            await _ensure_payload_indexes(client, collection)
             return
         except (UnexpectedResponse, RpcError):
             # Re-probe rather than matching a status code: this tells "another
@@ -80,6 +75,39 @@ async def _ensure_collection(client: AsyncQdrantClient, collection: QdrantCollec
             )
 
     await _assert_collection_matches(client, collection)
+    await _ensure_payload_indexes(client, collection)
+
+
+async def _ensure_payload_indexes(client: AsyncQdrantClient, collection: QdrantCollection) -> None:
+    """Create every `PAYLOAD_INDEXES` entry the collection lacks; additive, never drops one.
+
+    Runs for existing collections too, so a field added to the registry gets indexed on the
+    next startup. An index already present under a different type is logged, not replaced.
+    """
+    info = await client.get_collection(collection.collection_name)
+    existing = info.payload_schema or {}
+    for field_name, field_schema in PAYLOAD_INDEXES.items():
+        current = existing.get(field_name)
+        if current is None:
+            await client.create_payload_index(
+                    collection_name=collection.collection_name,
+                    field_name=field_name,
+                    field_schema=field_schema,
+            )
+            Logger.info(
+                    "Created Qdrant payload index",
+                    collection=collection.collection_name,
+                    field=field_name,
+                    schema=field_schema,
+            )
+        elif current.data_type != field_schema:
+            Logger.warning(
+                    "Qdrant payload index type differs from the registry; leaving it as is",
+                    collection=collection.collection_name,
+                    field=field_name,
+                    expected=field_schema,
+                    actual=current.data_type,
+            )
 
 
 async def _assert_collection_matches(

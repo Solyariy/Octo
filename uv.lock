@@ -862,6 +862,33 @@ wheels = [
 ]
 
 [[package]]
+name = "fastapi-filter"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d5/e9/cd52fa0d71adb81ac69b3ffce1c5155e6afd8434e1f021666c8edabf16cc/fastapi_filter-3.0.0.tar.gz", hash = "sha256:afdea1347c9bb61d7c1102d5ee1f5308810bfa7e08aa8d7f3cc3f3d258e24507", size = 9803, upload-time = "2026-06-03T15:51:47.77Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/e2/710f4e50ce083d53ae840078d750f062e158a78c97d1e380915e2860d35e/fastapi_filter-3.0.0-py3-none-any.whl", hash = "sha256:0b4f39ba94b51134d441cdac61d1d7f6a86e51cb662c4aa47854b5db7bfdd5c5", size = 11125, upload-time = "2026-06-03T15:51:46.973Z" },
+]
+
+[[package]]
+name = "fastapi-pagination"
+version = "0.15.16"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/65/9c2f1c324fa7a83b328b024c45e70471007b165a1d56ab237fe0e574e36f/fastapi_pagination-0.15.16.tar.gz", hash = "sha256:739a4e904729dc01e03ce95e260ed9be050d48a3659be8463e5c4fcdd0cf25b0", size = 614997, upload-time = "2026-07-28T18:41:07.421Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a4/d1/9725ec62421dcfe430d874cba9f82c0288baee0c4b7dd8aa8dcca2b0394e/fastapi_pagination-0.15.16-py3-none-any.whl", hash = "sha256:86dc73620812d47c297a7b8baca4eba2bac5d3f1d73aa75dc6e3bb12c0b803f7", size = 65991, upload-time = "2026-07-28T18:41:06.076Z" },
+]
+
+[[package]]
 name = "fastembed"
 version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2053,6 +2080,8 @@ dependencies = [
     { name = "chromadb" },
     { name = "einops" },
     { name = "fastapi" },
+    { name = "fastapi-filter" },
+    { name = "fastapi-pagination" },
     { name = "gallery-dl" },
     { name = "grpcio" },
     { name = "gunicorn" },
@@ -2098,6 +2127,8 @@ requires-dist = [
     { name = "chromadb", specifier = ">=1.5.9" },
     { name = "einops", specifier = ">=0.8.0" },
     { name = "fastapi", specifier = ">=0.139.0" },
+    { name = "fastapi-filter", specifier = ">=3.0.0" },
+    { name = "fastapi-pagination", specifier = ">=0.15.16" },
     { name = "gallery-dl", specifier = ">=1.32.11" },
     { name = "grpcio", specifier = ">=1.82.1" },
     { name = "gunicorn", specifier = ">=26.0.0" },

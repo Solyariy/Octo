@@ -36,7 +36,7 @@ services:
       POSTGRES_PASSWORD: octo
       POSTGRES_DB: octo
     ports:
-      - "5432:5432"
+      - "5555:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

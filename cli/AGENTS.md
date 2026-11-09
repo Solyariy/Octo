@@ -14,6 +14,7 @@
 - `qwen.py` — loads `QWEN3_4B`, encodes three passages, exits non-zero if the paraphrase pair is not more similar than the unrelated pair
 - `nvidia_cosmos.py` — runs only from `.venv-cosmos` (transformers 4.x, recipe in the root `AGENTS.md`); downloads a sample clip, embeds it and six captions through `CosmosEmbeddingManager`, exits non-zero if vectors are not `output_dim`-wide or the expected caption does not rank first; its `download_video` is a smoke-test helper, production downloads belong in `src.utils.basic`
 - `postgres.py` — upserts the admin user (`--email`, default `admin@octo.local`; `--password`, default `admin`) straight into Postgres via `PostgresManager.upsert_user`; testing environments only, needs migrated tables (`alembic upgrade head`)
+- `qdrant_backfill.py` — copies `posts.created_at` into the Qdrant payload of every point of each `SUCCESS` post (`set_payload` filtered by `post_id`), after ensuring payload indexes; idempotent, `--dry-run` only lists. Needs Postgres and Qdrant up
 - `embedder_registry.py` — prints every `EmbeddersEnum` member's backend, dim and load kwargs
 
 ## Local Contracts
@@ -29,6 +30,7 @@
 
 - `uv run python -m cli.postgres [--email ...] [--password ...]` (`make admin [ARGS="..."]`)
 - `uv run python -m cli.embedder_registry`
+- `uv run python -m cli.qdrant_backfill [--dry-run]`
 - `uv run python -m cli.qwen`
 - `uv run python -m cli.embeddinggemma`
 - `.venv-cosmos/bin/python -m cli.nvidia_cosmos`

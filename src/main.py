@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import AsyncExitStack, asynccontextmanager
 
 import aiohttp
@@ -9,6 +10,9 @@ from src.api.middleware import trace_requests
 from src.api.router import main_router
 from src.db.postgres.init_db import postgres_lifespan
 from src.db.qdrant.init_db import init_qdrant_collections, qdrant_client_lifespan
+from src.embedders.factory import get_embedding_manager
+from src.services.omni_pipeline import OmniPipeline
+from src.utils.logs import Logger
 
 
 @asynccontextmanager
@@ -25,10 +29,17 @@ async def lifespan(app: FastAPI):
         await init_qdrant_collections(qdrant_client)
         aiohttp_client = await stack.enter_async_context(aiohttp.ClientSession())
 
+        # Loaded once and shared by the pipeline and search; downloads on first boot.
+        embedder = get_embedding_manager(OmniPipeline.EMBEDDER)
+        stack.callback(embedder.unload)
+        await asyncio.to_thread(embedder.load_model)
+        Logger.info("Embedder loaded", embedder=OmniPipeline.EMBEDDER.value)
+
         app.state.postgres_engine = engine
         app.state.postgres_sessionmaker = session_factory
         app.state.qdrant_client = qdrant_client
         app.state.aiohttp_client = aiohttp_client
+        app.state.embedder = embedder
 
         yield
 

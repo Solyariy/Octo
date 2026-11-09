@@ -17,12 +17,13 @@
 - Configuration comes from pydantic-settings classes reading `.env`; secrets are never hardcoded. `MainSettings` has no defaults for `HF_AUTH_TOKEN`, `SECRET_KEY`, `ALGORITHM` and `ACCESS_TOKEN_EXPIRE_MINUTES`, so importing `src.settings` fails without a `.env` supplying all four
 - `MODELS_PATH` (default `<repo>/models`) is the only on-disk model cache location; resolve paths through `src.utils.order.get_model_path`. Scratch files go under `TEMP_DIR_PATH` (`<repo>/temp`, gitignored); `INSTAGRAM_TEMP_DIR_PATH` (`temp/instagram`), `THREADS_TEMP_DIR_PATH` (`temp/threads`) and `YOUTUBE_TEMP_DIR_PATH` (`temp/youtube`) are the per-platform scratch subfolders
 - `main.py` declares no routes: it includes `src.api.router.main_router` and owns process-wide startup/shutdown
-- `lifespan` is the single owner of every connection. It drives an `AsyncExitStack` so resources unwind in reverse order on any failure — including one raised out of `yield` — and publishes four entries on `app.state`: `postgres_engine`, `postgres_sessionmaker`, `qdrant_client`, `aiohttp_client`. Datastore packages must expose an async CM to enter here, never a connected client at import time
+- `lifespan` is the single owner of every connection. It drives an `AsyncExitStack` so resources unwind in reverse order on any failure — including one raised out of `yield` — and publishes five entries on `app.state`: `postgres_engine`, `postgres_sessionmaker`, `qdrant_client`, `aiohttp_client`, `embedder`. Datastore packages must expose an async CM to enter here, never a connected client at import time
 - Logging goes through `src.utils.logs`, never `print` or bare `logging`
 - New dependencies must be added to `pyproject.toml`; `transformers>=5.18` (4.x only in `.venv-cosmos`) and `torchcodec` must stay uninstalled (reasons in `embedders/AGENTS.md`)
 
 ## Work Guidance
 
+- `embedder` is the one `OmniPipeline.EMBEDDER` (EmbeddingGemma 2) manager, loaded via `asyncio.to_thread` during startup and unloaded on shutdown; startup therefore takes seconds and downloads the model on first boot
 - Async is the default for I/O (asyncpg, SQLAlchemy async, `AsyncQdrantClient`, aiohttp, aiofiles); model loading and inference in `embedders/` is synchronous and blocking, so routes offload it with `asyncio.to_thread`
 - `src.api.auth` issues JWTs at `POST /auth/token`; `get_current_user` decodes the bearer token and loads the user, so `CurrentUserDep` routes require a token
 

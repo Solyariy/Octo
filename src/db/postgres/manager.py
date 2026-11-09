@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -133,6 +134,33 @@ class PostgresManager(LoggerMixin):
                 count=len(ids),
                 post_ids=[str(i) for i in ids]
         )
+
+    async def get_post(self, user_id: StrUUID, post_id: StrUUID) -> Post | None:
+        """The post, or None when it does not exist or belongs to another user."""
+        stmt = select(PostPostgres).where(
+                PostPostgres.id == post_id,
+                PostPostgres.user_id == user_id,
+        )
+        res = await self.__exec(stmt, commit=False)
+        row = res.scalar_one_or_none()
+        return Post.model_validate(row) if row is not None else None
+
+    async def get_posts_by_ids(self, user_id: StrUUID, ids: list[StrUUID]) -> dict[UUID, Post]:
+        """The user's posts among `ids`, keyed by id; ids of other users' posts are dropped."""
+        if not ids:
+            return {}
+        stmt = select(PostPostgres).where(
+                PostPostgres.id.in_(ids),
+                PostPostgres.user_id == user_id,
+        )
+        res = await self.__exec(stmt, commit=False)
+        return {row.id: Post.model_validate(row) for row in res.scalars()}
+
+    async def get_posts_by_status(self, status: ProcessingStatus) -> list[Post]:
+        """Every user's posts in `status`; maintenance use (e.g. `cli.qdrant_backfill`)."""
+        stmt = select(PostPostgres).where(PostPostgres.status == status)
+        res = await self.__exec(stmt, commit=False)
+        return [Post.model_validate(row) for row in res.scalars()]
 
     async def get_media_file_by_id_bulk(self, ids: list[StrUUID]) -> list[PostIdUrl]:
         stmt = select(PostPostgres.id, PostPostgres.url).where(PostPostgres.id.in_(ids))

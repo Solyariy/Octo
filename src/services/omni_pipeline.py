@@ -1,5 +1,4 @@
 import asyncio
-import threading
 import time
 from collections import Counter
 from collections.abc import AsyncIterator
@@ -15,7 +14,8 @@ from src.db.postgres.schemas import Post, UserInfo
 from src.db.qdrant.manager import QdrantManager
 from src.db.qdrant.models import get_collection
 from src.db.qdrant.schemas import QdrantVector
-from src.embedders.factory import get_embedding_manager
+from src.embedders.locks import EMBED_LOCK
+from src.embedders.managers.omni_manager import OmniEmbeddingManager
 from src.embedders.models import EmbeddersEnum
 from src.enums import Modality, ProcessingStatus
 from src.link_scrapers.manager import LinkScraper
@@ -23,10 +23,6 @@ from src.services.schemas import EmbeddingItem, PipelineStage, PostJob
 from src.settings import main_settings
 from src.utils.basic import download_and_save_file
 from src.utils.logs import LoggerMixin
-
-# Serialises model use across concurrent runs so two requests never hold two copies of the
-# model. A threading.Lock does not bind to an event loop, unlike asyncio.Semaphore.
-_EMBED_LOCK = threading.Lock()
 
 _KNOWN_SUFFIXES = {
     Modality.IMAGE: ({".jpg", ".jpeg", ".png", ".webp", ".heic"}, ".jpg"),
@@ -59,10 +55,13 @@ class OmniPipeline(LoggerMixin):
             pg_manager: PostgresManager,
             qdrant_manager: QdrantManager,
             aiohttp_client: aiohttp.ClientSession,
+            embedder: OmniEmbeddingManager,
     ):
+        """`embedder` is the app-scoped `EMBEDDER` instance, already loaded in the lifespan."""
         self.pg_manager = pg_manager
         self.qdrant_manager = qdrant_manager
         self.aiohttp_client = aiohttp_client
+        self.embedder = embedder
         self.link_scraper = LinkScraper(aiohttp_client)
 
     async def run(self, posts: list[Post], user_info: UserInfo) -> None:
@@ -84,7 +83,7 @@ class OmniPipeline(LoggerMixin):
             async with aiofiles.tempfile.TemporaryDirectory(
                     dir=main_settings.TEMP_DIR_PATH,
                     prefix="omni_"
-            ) as temp_dir:
+                    ) as temp_dir:
                 async with self._stage(PipelineStage.DOWNLOAD, jobs):
                     await self._download(jobs, Path(temp_dir))
                 async with self._stage(PipelineStage.EMBED, jobs):
@@ -178,10 +177,11 @@ class OmniPipeline(LoggerMixin):
             by_modality=dict(Counter(str(item.modality) for item in items)),
         )
         inputs = [(item.modality, item.content) for item in items]
+        created_at = {job.post.id: job.post.created_at for job in self._active(jobs)}
 
         def encode():
-            with _EMBED_LOCK, get_embedding_manager(self.EMBEDDER) as manager:
-                return manager.encode_inputs(inputs)
+            with EMBED_LOCK:
+                return self.embedder.encode_inputs(inputs)
 
         # to_thread copies the context, so the manager's logs keep this request's log_id.
         embeddings = await asyncio.to_thread(encode)
@@ -191,12 +191,16 @@ class OmniPipeline(LoggerMixin):
                 platform=item.platform,
                 modality=item.modality,
                 media_index=item.media_index,
+                created_at=created_at[item.post_id],
                 vector=embedding,
             ) for item, embedding in zip(items, embeddings, strict=True)
         ]
 
     async def _store(
-            self, jobs: list[PostJob], vectors: list[QdrantVector], user_info: UserInfo,
+            self,
+            jobs: list[PostJob],
+            vectors: list[QdrantVector],
+            user_info: UserInfo,
     ) -> None:
         if not vectors:
             return
@@ -271,7 +275,11 @@ class OmniPipeline(LoggerMixin):
         )
 
     def _fail(
-            self, job: PostJob, stage: PipelineStage, error: BaseException | str, **context,
+            self,
+            job: PostJob,
+            stage: PipelineStage,
+            error: BaseException | str,
+            **context,
     ) -> None:
         job.failed_stage = stage
         job.error = _describe(error)

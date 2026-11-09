@@ -9,6 +9,7 @@
 - `models.py` — `EmbeddersEnum`, `EmbedderSpec`, and the `EMBEDDING_MODEL_CONFIG` registry (backend, output dim, load kwargs)
 - `factory.py` — `get_embedding_manager`, the only supported way to build a manager, plus the `MANAGERS` backend table
 - `schemas.py` — `CustomVector`, the id+vector shape for carrying embeddings around
+- `locks.py` — `EMBED_LOCK`, the `threading.Lock` every caller holds while using the shared app-scoped embedder
 - `managers/base.py` — `BaseEmbeddingManager`, the backend-agnostic lifecycle (`load_model`/`encode_text`/`encode_image`/`encode_video`/`unload`/context manager)
 - `managers/hf_manager.py` — `GeneralEmbeddingManager`, the sentence-transformers backend
 - `managers/omni_manager.py` — `OmniEmbeddingManager(GeneralEmbeddingManager)`, the multimodal sentence-transformers backend for EmbeddingGemma 2: `encode_inputs` takes `(Modality, text-or-path)` pairs and returns one row per input
@@ -21,7 +22,7 @@
 - `spec.dim` is the contract for vector length and is what vector-store collections are sized against: `GeneralEmbeddingManager` passes it as `truncate_dim`, `CosmosEmbeddingManager` emits it natively (768)
 - `GeneralEmbeddingManager` is the only path to a `SentenceTransformer`: it checks `MODELS_PATH/<model-id>` on disk first, otherwise downloads with `HF_AUTH_TOKEN` and persists atomically via a sibling `.part` directory. A failed save must leave no partial directory behind and must keep the in-memory model usable
 - `CosmosEmbeddingManager` uses the HuggingFace cache layout under `MODELS_PATH` (`cache_dir=`) instead, because `save_pretrained` does not round-trip a remote-code model together with its processor. Both layouts stay inside `MODELS_PATH`
-- `load_model()` is idempotent; use the context manager (`with get_embedding_manager(...) as m`) so `unload()` drops references on exit
+- `load_model()` is idempotent; use the context manager (`with get_embedding_manager(...) as m`) so `unload()` drops references on exit. Exception: the service's `GEMMA2_OMNI` manager is built once in `src.main`'s lifespan and shared, so callers use it under `EMBED_LOCK` and never unload it
 - `encode_text` is implemented by every backend; `encode_image` / `encode_video` raise `NotImplementedError` unless the backend has a vision/video tower. Cosmos and EmbeddingGemma 2 each put their modalities in one L2-normalised space, so a dot product is cosine similarity; the two spaces are not comparable with each other
 - Cosmos `encode_video` accepts file paths or THWC uint8 frame arrays and stacks every clip of one call into a single batch, so callers must chunk large lists themselves
 - `OmniEmbeddingManager.encode_inputs` groups inputs by modality: text gets `prompt_name="Document"` (queries must pass `SearchQuery`), images are opened with Pillow, and videos are decoded in chunks of `VIDEO_CHUNK_SIZE`. Each video is sampled at 1 fps, capped at `VIDEO_MAX_FRAMES` (32), and passed as PIL frames with explicit `video_metadata`. Never hand it video paths/URLs directly: that path decodes through torchcodec

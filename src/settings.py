@@ -45,7 +45,7 @@ class DBSettings(BaseSettings):
     QDRANT_POOL_SIZE: int | None = None
     QDRANT_CHECK_COMPATIBILITY: bool = True
 
-    POSTGRES_URL: str = "postgresql+asyncpg://octo:octo@localhost:5432/octo"
+    POSTGRES_URL: str = "postgresql+asyncpg://octo:octo@localhost:5555/octo"
     POSTGRES_ECHO: bool = False
     # Pools are per worker process: with `gunicorn -w N` the ceiling against
     # Postgres is N * (POSTGRES_POOL_SIZE + POSTGRES_MAX_OVERFLOW).

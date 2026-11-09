@@ -9,7 +9,7 @@
 - `init_db.py` — `Base`, `get_base_metadata()` for Alembic, and `postgres_lifespan()`, the async CM yielding `(engine, async_sessionmaker)`
 - `models.py` — `UserPostgres`, `PostPostgres` (`posts` table: `url`, `platform`, `status: ProcessingStatus`, `user_id`)
 - `schemas.py` — `UserInfo`, `Post`, `PostIdUrl` pydantic shapes returned to callers
-- `manager.py` — `PostgresManager`: user queries (`upsert_user` is used by `cli/postgres.py`), `insert_posts_bulk`, `claim_pending_posts`, `set_status`, `get_media_file_by_id_bulk`
+- `manager.py` — `PostgresManager`: user queries (`upsert_user` is used by `cli/postgres.py`), `insert_posts_bulk`, `claim_pending_posts`, `set_status`, user-scoped reads `get_post` (None when missing or not the user's) and `get_posts_by_ids`, maintenance read `get_posts_by_status`, `get_media_file_by_id_bulk`
 
 ## Local Contracts
 
