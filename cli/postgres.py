@@ -9,7 +9,7 @@ from src.db.postgres.manager import PostgresManager
 async def create_admin(email: str, password: str) -> int:
     async with postgres_lifespan() as (_, session_factory):
         user = await PostgresManager(session_factory).upsert_user(
-                email=email, hashed_password=AuthManager.get_password_hash(password)
+            email=email, hashed_password=AuthManager.get_password_hash(password)
         )
     print(f"admin user ready: \nid={user.id} \nemail={user.email}")
     return 0

@@ -1,0 +1,73 @@
+$kind: collection
+description: "Octo FastAPI service. Auth is automatic: the collection pre-request script logs in via `POST /auth/token` with `{{username}}`/`{{password}}` whenever `access_token` is missing or expires within `token_refresh_skew_seconds`, and stores `access_token` + `access_token_expires_at` (ms epoch, read from the JWT `exp`) in the active environment. Every request inherits Bearer `{{access_token}}`. Any 401 clears the stored token so the next request logs in again. The API has no refresh-token endpoint, so a refresh is a silent re-login."
+variables:
+  token_refresh_skew_seconds: "30"
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      // Ensure a valid bearer token before every authenticated request.
+      const auth = pm.request.auth;
+      const needsToken = !(auth && auth.type === 'noauth');
+
+      if (needsToken) {
+          const token = pm.environment.get('access_token');
+          const expiresAt = Number(pm.environment.get('access_token_expires_at') || 0);
+          const skewMs = Number(pm.variables.get('token_refresh_skew_seconds') || 30) * 1000;
+
+          if (!token || Date.now() + skewMs >= expiresAt) {
+              const username = pm.variables.get('username');
+              const password = pm.variables.get('password');
+              if (!username || !password) {
+                  throw new Error('Set `username` and `password` in the active environment to enable auto-login');
+              }
+
+              pm.sendRequest({
+                  url: pm.variables.replaceIn('{{base_url}}/auth/token'),
+                  method: 'POST',
+                  header: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                  body: {
+                      mode: 'urlencoded',
+                      urlencoded: [
+                          { key: 'grant_type', value: 'password' },
+                          { key: 'username', value: username },
+                          { key: 'password', value: password }
+                      ]
+                  }
+              }, (err, res) => {
+                  if (err || res.code !== 200) {
+                      pm.environment.unset('access_token');
+                      pm.environment.unset('access_token_expires_at');
+                      console.error('Auto-login failed', err || `${res.code} ${res.text()}`);
+                      return;
+                  }
+                  const accessToken = res.json().access_token;
+                  let expMs = Date.now() + 15 * 60 * 1000;
+                  try {
+                      const payload = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+                      const claims = JSON.parse(atob(payload.padEnd(payload.length + (4 - payload.length % 4) % 4, '=')));
+                      if (claims.exp) { expMs = claims.exp * 1000; }
+                  } catch (e) {
+                      console.warn('Could not decode JWT exp; assuming 15 min lifetime', e);
+                  }
+                  pm.environment.set('access_token', accessToken);
+                  pm.environment.set('access_token_expires_at', String(expMs));
+                  console.log('Access token refreshed; expires', new Date(expMs).toISOString());
+              });
+          }
+      }
+    language: text/javascript
+  - type: http:afterResponse
+    code: |-
+      // A rejected token is dropped so the next request logs in again.
+      if (pm.response.code === 401) {
+          pm.environment.unset('access_token');
+          pm.environment.unset('access_token_expires_at');
+          console.warn('401 received; cleared access_token, next request will re-login');
+      }
+    language: text/javascript
+auth:
+  - id: 6af1eea1-5443-41e9-af40-72d518f071d6
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{access_token}}"

@@ -22,16 +22,16 @@ async def backfill(*, dry_run: bool) -> int:
             created_at = post.created_at.isoformat()
             if not dry_run:
                 await client.set_payload(
-                        collection_name=collection,
-                        payload={"created_at": created_at},
-                        points=models.Filter(
-                                must=[
-                                        models.FieldCondition(
-                                                key="post_id",
-                                                match=models.MatchValue(value=str(post.id)),
-                                        )
-                                ]
-                        ),
+                    collection_name=collection,
+                    payload={"created_at": created_at},
+                    points=models.Filter(
+                        must=[
+                            models.FieldCondition(
+                                key="post_id",
+                                match=models.MatchValue(value=str(post.id)),
+                            )
+                        ]
+                    ),
                 )
             print(f"{post.id} created_at={created_at}")
     return 0
@@ -39,9 +39,13 @@ async def backfill(*, dry_run: bool) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-            description="Back-fill created_at into Qdrant payloads of already-processed posts"
+        description="Back-fill created_at into Qdrant payloads of already-processed posts"
     )
-    parser.add_argument("--dry-run", action="store_true", help="list posts, write nothing")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="list posts, write nothing",
+    )
     args = parser.parse_args()
     return asyncio.run(backfill(dry_run=args.dry_run))
 

@@ -31,9 +31,9 @@ class GeneralEmbeddingManager(BaseEmbeddingManager):
 
     def _download_and_save(self, dest: Path) -> SentenceTransformer:
         model = SentenceTransformer(
-                self.embedder_info.value,
-                **self.embedder_info.get_config(),
-                token=main_settings.HF_AUTH_TOKEN.get_secret_value()
+            self.embedder_info.value,
+            **self.embedder_info.get_config(),
+            token=main_settings.HF_AUTH_TOKEN.get_secret_value(),
         )
 
         # Save atomically: write to a sibling .part dir, then move into place.
@@ -45,15 +45,15 @@ class GeneralEmbeddingManager(BaseEmbeddingManager):
             self.log_info("Model saved", path=str(dest))
         except Exception as e:
             self.log_error(
-                    "Failed to persist downloaded model",
-                    error=e,
-                    model=self.embedder_info.value,
+                "Failed to persist downloaded model",
+                error=e,
+                model=self.embedder_info.value,
             )
             # Still keep the in-memory model usable so this run isn't wasted;
             # it will simply re-download on the next start.
             self.log_warning(
-                    "Keeping model in memory only; will re-download next run",
-                    model=self.embedder_info.value,
+                "Keeping model in memory only; will re-download next run",
+                model=self.embedder_info.value,
             )
             # Clean up any leftover partial directory.
             if os.path.exists(tmp):
@@ -63,4 +63,8 @@ class GeneralEmbeddingManager(BaseEmbeddingManager):
 
     def encode_text(self, texts: list[str], **kwargs):
         self.load_model()
-        return self.model.encode(texts, **kwargs, truncate_dim=self.output_dim)
+        return self.model.encode(
+            texts,
+            **kwargs,
+            truncate_dim=self.output_dim,
+        )

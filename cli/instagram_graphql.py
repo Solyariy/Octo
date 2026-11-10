@@ -20,7 +20,10 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", help="Reel/post URL or bare shortcode")
     parser.add_argument(
-            "--out", type=str, default=None, help="Optional path to dump the raw JSON response"
+        "--out",
+        type=str,
+        default=None,
+        help="Optional path to dump the raw JSON response",
     )
     args = parser.parse_args()
 
@@ -36,7 +39,11 @@ async def main() -> None:
 
     if args.out:
         with open(args.out, "w") as f:
-            json.dump(data.raw, f, indent=2)
+            json.dump(
+                data.raw,
+                f,
+                indent=2,
+            )
         print(f"Saved raw response to {args.out}")
 
 

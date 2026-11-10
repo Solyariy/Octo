@@ -1,0 +1,18 @@
+$kind: http-request
+description: "Caller's `Post` (status: pending | in_process | success | failed). Missing or another user's post → 404."
+url: "{{base_url}}/posts/{{post_id}}"
+method: GET
+scripts:
+  - type: beforeRequest
+    code: |-
+      if (!pm.variables.get('post_id')) {
+          console.warn('post_id is empty; run Save posts first or set it in the environment');
+          pm.execution.skipRequest();
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('id matches', () => pm.expect(pm.response.json().id).to.eql(pm.variables.get('post_id')));
+    language: text/javascript
+order: 3000

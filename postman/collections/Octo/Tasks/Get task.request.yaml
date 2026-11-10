@@ -1,0 +1,23 @@
+$kind: http-request
+description: "One task with every post and its outcome in this task: `status`, plus `stage` and `error` where it failed. Missing or another user's task → 404."
+url: "{{base_url}}/api/tasks/{{task_id}}"
+method: GET
+scripts:
+  - type: beforeRequest
+    code: |-
+      if (!pm.variables.get('task_id')) {
+          console.warn('task_id is empty; run Process all pending or List tasks first');
+          pm.execution.skipRequest();
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('id matches', () => pm.expect(body.id).to.eql(pm.variables.get('task_id')));
+      pm.test('posts carry per-task outcome', () => {
+          pm.expect(body.posts).to.be.an('array');
+          body.posts.forEach((p) => pm.expect(p).to.include.keys('post', 'status', 'stage', 'error'));
+      });
+    language: text/javascript
+order: 2000

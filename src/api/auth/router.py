@@ -14,10 +14,12 @@ auth_router = APIRouter()
 
 @auth_router.post("/token")
 async def login_for_access_token(
-        form_data: Annotated[OAuth2PasswordRequestForm, Depends()], pg_manager: PostgresManagerDep
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], pg_manager: PostgresManagerDep
 ) -> Token:
     return await AuthManager.authenticate_user(
-            email=form_data.username, password=form_data.password, pg_manager=pg_manager
+        email=form_data.username,
+        password=form_data.password,
+        pg_manager=pg_manager,
     )
 
 

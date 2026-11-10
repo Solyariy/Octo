@@ -1,0 +1,21 @@
+$kind: http-request
+description: Non-empty list of `InputPost`. Inserts as `PENDING`; duplicate urls are skipped and absent from the returned ids. Any unsupported url → 422. Stores the first returned id in `post_id`.
+url: "{{base_url}}/save"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    [
+      { "url": "https://www.instagram.com/reel/DfLSMIcz3BM/" }
+    ]
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      const ids = pm.response.json();
+      pm.test('returns list of ids', () => pm.expect(ids).to.be.an('array'));
+      if (Array.isArray(ids) && ids.length) { pm.environment.set('post_id', ids[0]); }
+    language: text/javascript
+order: 1000

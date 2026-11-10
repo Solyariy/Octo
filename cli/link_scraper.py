@@ -11,6 +11,7 @@ import asyncio
 
 import aiohttp
 
+from src.link_scrapers.errors import ScraperStatusError
 from src.link_scrapers.manager import LinkScraper, UnsupportedLinkError
 from src.link_scrapers.scrapers.instagram_graphql import InstagramFetchError
 from src.link_scrapers.scrapers.threads import ThreadsFetchError
@@ -20,7 +21,10 @@ async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", help="Instagram or Threads post URL")
     parser.add_argument(
-            "--out", type=str, default=None, help="Optional path to dump the normalized Post JSON"
+        "--out",
+        type=str,
+        default=None,
+        help="Optional path to dump the normalized Post JSON",
     )
     args = parser.parse_args()
 
@@ -34,7 +38,7 @@ async def main() -> int:
     async with aiohttp.ClientSession() as session:
         try:
             post = await LinkScraper(session).scrap(args.url)
-        except (InstagramFetchError, ThreadsFetchError) as e:
+        except (InstagramFetchError, ThreadsFetchError, ScraperStatusError) as e:
             print(f"Scrape failed: {e}")
             return 1
 

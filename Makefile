@@ -36,7 +36,7 @@ seed: ## Insert seed post urls as PENDING for the admin user; optional file=<pat
 	uv run python -m cli.seeder $(if $(file),--file "$(file)") $(args)
 
 smoke: ## Call GET /health on the local API (server must be up)
-	curl -fsS http://localhost:8000/health
+	curl -fsS http://localhost:8123/health
 	@echo
 
 db-shell: ## Open psql in the postgres container

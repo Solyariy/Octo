@@ -42,29 +42,22 @@ class EmbeddersEnum(str, Enum):
 
 
 EMBEDDING_MODEL_CONFIG: dict[EmbeddersEnum, EmbedderSpec] = {
-        EmbeddersEnum.QWEN3_06B:
-        EmbedderSpec(backend="sentence_transformers", dim=1024),
-        EmbeddersEnum.QWEN3_8B:
-        EmbedderSpec(backend="sentence_transformers", dim=2048),
-        EmbeddersEnum.QWEN3_4B:
-        EmbedderSpec(backend="sentence_transformers", dim=2048),
-        EmbeddersEnum.JINA5_OMNI:
-        EmbedderSpec(backend="sentence_transformers", dim=2048),
-        EmbeddersEnum.GEMMA_03B:
-        EmbedderSpec(backend="sentence_transformers", dim=768),
-        EmbeddersEnum.COSMOS_EMBED1_448P:
-        EmbedderSpec(backend="cosmos", dim=768),
-        # Text, image and video share one space; the audio encoder (300M) is never loaded.
-        EmbeddersEnum.GEMMA2_OMNI:
-        EmbedderSpec(
-                backend="omni", dim=768, load_kwargs={"config_kwargs": {
-                        "audio_config": None
-                }}
-        ),
+    EmbeddersEnum.QWEN3_06B: EmbedderSpec(backend="sentence_transformers", dim=1024),
+    EmbeddersEnum.QWEN3_8B: EmbedderSpec(backend="sentence_transformers", dim=2048),
+    EmbeddersEnum.QWEN3_4B: EmbedderSpec(backend="sentence_transformers", dim=2048),
+    EmbeddersEnum.JINA5_OMNI: EmbedderSpec(backend="sentence_transformers", dim=2048),
+    EmbeddersEnum.GEMMA_03B: EmbedderSpec(backend="sentence_transformers", dim=768),
+    EmbeddersEnum.COSMOS_EMBED1_448P: EmbedderSpec(backend="cosmos", dim=768),
+    # Text, image and video share one space; the audio encoder (300M) is never loaded.
+    EmbeddersEnum.GEMMA2_OMNI: EmbedderSpec(
+        backend="omni",
+        dim=768,
+        load_kwargs={"config_kwargs": {"audio_config": None}},
+    ),
 }
 
 _unregistered = [member.name for member in EmbeddersEnum if member not in EMBEDDING_MODEL_CONFIG]
 if _unregistered:
     raise RuntimeError(
-            f"EmbeddersEnum members without an EMBEDDING_MODEL_CONFIG entry: {_unregistered}"
+        f"EmbeddersEnum members without an EMBEDDING_MODEL_CONFIG entry: {_unregistered}"
     )

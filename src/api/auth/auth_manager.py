@@ -20,9 +20,9 @@ class AuthManager:
 
     @classmethod
     def create_access_token(
-            cls,
-            data: dict,
-            expires_delta: timedelta = main_settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+        cls,
+        data: dict,
+        expires_delta: timedelta = main_settings.ACCESS_TOKEN_EXPIRE_MINUTES,
     ):
         to_encode = data.copy()
         if expires_delta:
@@ -31,9 +31,9 @@ class AuthManager:
             expire = datetime.now(UTC) + timedelta(minutes=15)
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(
-                to_encode,
-                main_settings.SECRET_KEY.get_secret_value(),
-                algorithm=main_settings.ALGORITHM,
+            to_encode,
+            main_settings.SECRET_KEY.get_secret_value(),
+            algorithm=main_settings.ALGORITHM,
         )
         return encoded_jwt
 
@@ -48,15 +48,15 @@ class AuthManager:
     @staticmethod
     async def get_current_user(token: str, pg_manager: PostgresManager) -> UserInfo:
         credentials_exception = HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
         try:
             payload = jwt.decode(
-                    token,
-                    main_settings.SECRET_KEY.get_secret_value(),
-                    algorithms=[main_settings.ALGORITHM],
+                token,
+                main_settings.SECRET_KEY.get_secret_value(),
+                algorithms=[main_settings.ALGORITHM],
             )
             user_email = payload.get("sub")
             if user_email is None:
@@ -70,20 +70,26 @@ class AuthManager:
         return user
 
     @classmethod
-    async def authenticate_user(cls, email: str, password: str, pg_manager: PostgresManager) -> Token:
+    async def authenticate_user(
+        cls,
+        email: str,
+        password: str,
+        pg_manager: PostgresManager,
+    ) -> Token:
         pg_user = await pg_manager.get_user_for_auth(user_email=email)
         is_valid = cls.verify_password(password, pg_user.hashed_password)
         if not is_valid:
             raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Incorrect username or password",
-                    headers={"WWW-Authenticate": "Bearer"},
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
             )
         access_token = cls.create_access_token(data={"sub": email})
         return Token(access_token=access_token, token_type="bearer")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import uuid
+
     tp = AuthManager.get_password_hash("admin")
     print(uuid.uuid4(), tp)

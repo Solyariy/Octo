@@ -22,7 +22,7 @@
 - Classes log via `LoggerMixin`, which prefixes `[ClassName]` and passes `increase_depth=2`; free functions call `Logger.info/debug/warning/error` directly
 - `Logger` methods are wrapped by `inject_traceback`, which walks the caller frame to attach `(file, line)` — any new log level must keep the `increase_depth` contract or locations will point at the wrong frame
 - `Logger.error` always attaches `traceback.format_exc()`, so call it from inside an `except` block
-- Every log line carries `log_id` from `get_log_id()`, which lazily fills the `LOG_ID` ContextVar defined in `src.settings`; `src.api.middleware.trace_requests` sets it per HTTP request (from `X-Request-ID`), so one request's logs, background tasks and `to_thread` work share one id
+- Every log line carries `log_id` from `get_log_id()`, the only writer of the `LOG_ID` ContextVar defined in `src.settings`: when the var is unset in the current context it generates a UUID and sets it. `src.api.middleware.trace_requests` logs before calling the route, so the id is bound in the request's context and its logs, background tasks and `to_thread` work share it. Outside a request (CLI scripts) the first log line binds one id for the whole run
 - `models.py` and `video.py` may import torch and PyAV, but must stay model-agnostic: no HuggingFace model ids, no manager classes
 
 ## Work Guidance

@@ -43,7 +43,11 @@ class PostJob(BaseModel):
 
 
 class ProcessingAccepted(BaseModel):
-    """`POST /process/all` response: grep the server log for `log_id` to trace the run."""
+    """`POST /process/all` and retry response: grep the server log for `log_id` to trace the run.
+
+    `task_id` is None when nothing was claimed.
+    """
 
     log_id: StrUUID
+    task_id: StrUUID | None = None
     post_ids: list[StrUUID]

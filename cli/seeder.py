@@ -30,16 +30,24 @@ async def seed(path: Path, email: str) -> int:
             return 1
         inserted = await pg_manager.insert_posts_bulk(posts, user)
     print(
-            f"seeded {len(inserted)} of {len(posts)} posts as PENDING for {email} "
-            f"({len(posts) - len(inserted)} already existed)"
+        f"seeded {len(inserted)} of {len(posts)} posts as PENDING for {email} "
+        f"({len(posts) - len(inserted)} already existed)"
     )
     return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Insert seed post urls as PENDING posts")
-    parser.add_argument("--file", type=Path, default=DEFAULT_FILE)
-    parser.add_argument("--email", default="admin@octo.local", help="owner of the seeded posts")
+    parser.add_argument(
+        "--file",
+        type=Path,
+        default=DEFAULT_FILE,
+    )
+    parser.add_argument(
+        "--email",
+        default="admin@octo.local",
+        help="owner of the seeded posts",
+    )
     args = parser.parse_args()
     return asyncio.run(seed(args.file, args.email))
 

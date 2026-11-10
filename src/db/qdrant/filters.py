@@ -82,8 +82,9 @@ class QdrantFilter(BaseFilterModel):
 
         for key, bounds in ranges.items():
             range_cls = (
-                    models.DatetimeRange if any(isinstance(v, datetime)
-                                                for v in bounds.values()) else models.Range
+                models.DatetimeRange
+                if any(isinstance(v, datetime) for v in bounds.values())
+                else models.Range
             )
             must.append(models.FieldCondition(key=key, range=range_cls(**bounds)))
 
@@ -96,7 +97,7 @@ class QdrantFilter(BaseFilterModel):
     @staticmethod
     def _match_any(key: str, values: list[Any]) -> models.FieldCondition:
         return models.FieldCondition(
-                key=key, match=models.MatchAny(any=[_payload_value(v) for v in values])
+            key=key, match=models.MatchAny(any=[_payload_value(v) for v in values])
         )
 
 

@@ -48,7 +48,16 @@ app = FastAPI(lifespan=lifespan)
 app.middleware("http")(trace_requests)
 
 app.include_router(router=main_router)
-app.include_router(router=auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(
+    router=auth_router,
+    prefix="/auth",
+    tags=["Auth"],
+)
 
-if __name__ == '__main__':
-    uvicorn.run(app, port=8000, host="localhost", loop="uvloop")
+if __name__ == "__main__":
+    uvicorn.run(
+        app,
+        port=8123,
+        host="localhost",
+        loop="uvloop",
+    )

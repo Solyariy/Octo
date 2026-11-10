@@ -1,0 +1,28 @@
+$kind: http-request
+description: "Caller's tasks (one per `/process/all` or retry), newest first, paginated with `total`. Each item has `total_count`, `success_count`, `failed_count` and a derived `status` (in_process | success | failed). Stores the newest task id in `task_id` when it is empty."
+url: "{{base_url}}/api/tasks?page=1&size=20"
+method: GET
+queryParams:
+  - key: page
+    value: "1"
+  - key: size
+    value: "20"
+    description: <= 100
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('is a page with total', () => {
+          pm.expect(body.items).to.be.an('array');
+          pm.expect(body.total).to.be.a('number');
+      });
+      pm.test('items carry counts and status', () => {
+          body.items.forEach((t) => {
+              pm.expect(t).to.include.keys('id', 'total_count', 'success_count', 'failed_count', 'status');
+              pm.expect(t.status).to.be.oneOf(['in_process', 'success', 'failed']);
+          });
+      });
+      if (body.items.length && !pm.environment.get('task_id')) { pm.environment.set('task_id', body.items[0].id); }
+    language: text/javascript
+order: 1000

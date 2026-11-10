@@ -13,9 +13,9 @@ import json
 import aiohttp
 
 from src.link_scrapers.scrapers.threads import (
-        download_media,
-        fetch_post,
-        resolve_shortcode,
+    download_media,
+    fetch_post,
+    resolve_shortcode,
 )
 from src.settings import main_settings
 
@@ -24,9 +24,16 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", help="Threads post URL, /share/ link or bare shortcode")
     parser.add_argument(
-            "--out", type=str, default=None, help="Optional path to dump the raw post JSON"
+        "--out",
+        type=str,
+        default=None,
+        help="Optional path to dump the raw post JSON",
     )
-    parser.add_argument("--no-download", action="store_true", help="Skip downloading media")
+    parser.add_argument(
+        "--no-download",
+        action="store_true",
+        help="Skip downloading media",
+    )
     args = parser.parse_args()
 
     async with aiohttp.ClientSession() as session:
@@ -34,11 +41,15 @@ async def main() -> None:
         post = await fetch_post(args.url, session=session)
         if not args.no_download:
             directory = main_settings.THREADS_TEMP_DIR_PATH / shortcode
-            await download_media(post, directory, session)
+            await download_media(
+                post,
+                directory,
+                session,
+            )
 
     print(
-            f"@{post.username} ({post.taken_at}) likes={post.like_count} "
-            f"replies={post.reply_count} reposts={post.repost_count}"
+        f"@{post.username} ({post.taken_at}) likes={post.like_count} "
+        f"replies={post.reply_count} reposts={post.repost_count}"
     )
     print(post.text)
     for item in post.media:
@@ -46,7 +57,12 @@ async def main() -> None:
 
     if args.out:
         with open(args.out, "w") as f:
-            json.dump(post.raw, f, indent=2, ensure_ascii=False)
+            json.dump(
+                post.raw,
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
         print(f"Saved raw post to {args.out}")
 
 

@@ -25,9 +25,7 @@ class MainSettings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: Annotated[
         timedelta,
-        BeforeValidator(
-            lambda v: timedelta(minutes=int(v)) if str(v).isdigit() else v
-        ),
+        BeforeValidator(lambda v: timedelta(minutes=int(v)) if str(v).isdigit() else v),
     ]
 
 

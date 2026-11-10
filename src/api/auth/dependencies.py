@@ -11,7 +11,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 async def get_current_user(
-        token: Annotated[str, Depends(oauth2_scheme)], pg_manager: PostgresManagerDep
+    token: Annotated[str, Depends(oauth2_scheme)], pg_manager: PostgresManagerDep
 ) -> UserInfo:
     return await AuthManager.get_current_user(token=token, pg_manager=pg_manager)
 

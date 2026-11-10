@@ -1,0 +1,48 @@
+$kind: http-request
+description: Semantic search over the caller's processed posts. Filters (disabled by default) are applied inside Qdrant.
+url: "{{base_url}}/search?q=cat playing piano&page=1&size=20"
+method: GET
+queryParams:
+  - key: q
+    value: cat playing piano
+    description: Text query, 1-512 chars
+  - key: page
+    value: "1"
+  - key: size
+    value: "20"
+    description: <= 100; page * size <= 1000
+  - key: platform
+    value: instagram
+    disabled: true
+    description: threads | instagram
+  - key: platform__in
+    value: instagram,threads
+    disabled: true
+  - key: modality
+    value: video
+    disabled: true
+    description: text | image | video
+  - key: modality__in
+    value: image,video
+    disabled: true
+  - key: post_id__in
+    value: "{{post_id}}"
+    disabled: true
+  - key: created_at__gte
+    value: 2026-01-01T00:00:00Z
+    disabled: true
+  - key: created_at__lte
+    value: 2026-12-31T23:59:59Z
+    disabled: true
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('page shape', () => {
+          const body = pm.response.json();
+          pm.expect(body.items).to.be.an('array');
+          pm.expect(body).to.have.property('page');
+          pm.expect(body).to.have.property('size');
+      });
+    language: text/javascript
+order: 4000

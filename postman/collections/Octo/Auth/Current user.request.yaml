@@ -1,0 +1,11 @@
+$kind: http-request
+description: Returns the `UserInfo` (`id`, `email`) the bearer token belongs to.
+url: "{{base_url}}/auth/users/me/"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      pm.test('email matches login', () => pm.expect(pm.response.json().email).to.eql(pm.variables.get('username')));
+    language: text/javascript
+order: 2000

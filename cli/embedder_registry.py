@@ -7,6 +7,11 @@ Run with:
 
 from src.embedders.models import EmbeddersEnum
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     for model in EmbeddersEnum:
-        print(model.name, model.get_backend(), model.get_dim(), model.get_config())
+        print(
+            model.name,
+            model.get_backend(),
+            model.get_dim(),
+            model.get_config(),
+        )

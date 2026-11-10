@@ -50,7 +50,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff>=0.16.10",
-    "yapf>=0.43.0",
 ]
 
 [tool.ruff]
@@ -61,19 +60,13 @@ force-exclude = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "FBT", "SIM"]
-# Layout belongs to yapf; ruff only reports logic issues.
+# Layout belongs to the formatter (pyfmt); lines it cannot split are not lint errors.
 ignore = ["E501"]
 # `ruff check --fix` only sorts imports and drops unused ones.
 fixable = ["I", "F401"]
 
 [tool.ruff.format]
-# Formatting belongs to yapf; make `ruff format` a no-op.
-exclude = ["*"]
-
-[tool.yapf]
-based_on_style = "pep8"
-column_limit = 100
-indent_width = 4
-continuation_indent_width = 8
-dedent_closing_brackets = true
-split_before_first_argument = true
+quote-style = "double"
+# A trailing comma keeps arguments one per line; ~/.local/bin/pyfmt adds it
+# wherever a declaration or call has more than two parameters.
+skip-magic-trailing-comma = false

@@ -22,7 +22,15 @@ def sample_frames(path: Path | str, num_frames: int) -> np.ndarray:
         if total < 1:
             raise RuntimeError(f"No decodable frames in {path}")
 
-        wanted = np.linspace(0, total - 1, num_frames).astype(int).tolist()
+        wanted = (
+            np.linspace(
+                0,
+                total - 1,
+                num_frames,
+            )
+            .astype(int)
+            .tolist()
+        )
         last = max(wanted)
         needed = set(wanted)
 

@@ -36,7 +36,8 @@ Findings behind `../scrapers/instagram_graphql.py`, verified live on 2026-10-03 
 
 ## Errors and limits
 
-- HTTP 429 → `InstagramFetchError("Rate limited…")`; 404 → "not found or private". Both are final, never retried. Other `aiohttp.ClientError`s (including `raise_for_status` on 400) are retried up to `MAX_ATTEMPTS` (3) with exponential backoff (2–30 s).
+- HTTP 429 → `ScraperStatusError(INSTAGRAM, "rate limited (429)")`; 401 → `ScraperStatusError(INSTAGRAM, "blocked (401): <message>")`; 404 → `InstagramFetchError("not found or private")`. All three are final, never retried; the first two make `LinkScraper.scrap_bulk` abort the rest of the batch's Instagram urls.
+- 401 seen live on 2026-11-10 after ~30 GraphQL POSTs from one IP within a few minutes (10 reels × 3 retries): body `{"message":"Please wait a few minutes before you try again.","require_login":true,"igweb_rollout":true,"status":"fail"}`. The `csrftoken` GET still returns 200. It is an IP-level anonymous-access throttle, not a stale `doc_id` (that gives 400); retrying extends it, so wait it out. Other `aiohttp.ClientError`s (including `raise_for_status` on 400) are retried up to `MAX_ATTEMPTS` (3) with exponential backoff (2–30 s).
 - A 400 is the expected symptom of a rotated `doc_id` or `x-ig-app-id`: re-extract them from a fresh Instagram web page load or network capture.
 - Self-imposed rate limits, not measured Instagram limits: 1 request per 10 s and 60 per hour, applied to the GraphQL POST only (the `csrftoken` GET is not limited, so each reel costs one unlimited GET plus one limited POST).
 - The `csrftoken` is fetched anew on every attempt; it is not cached across reels.

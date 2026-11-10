@@ -1,0 +1,33 @@
+$kind: http-request
+description: "OAuth2 password form. Optional: every other request logs in automatically. Use this to force a fresh token."
+url: "{{base_url}}/auth/token"
+method: POST
+body:
+  type: urlencoded
+  content:
+    grant_type: password
+    username: "{{username}}"
+    password: "{{password}}"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200 OK', () => pm.response.to.have.status(200));
+      const body = pm.response.json();
+      pm.test('returns bearer token', () => {
+          pm.expect(body.access_token).to.be.a('string');
+          pm.expect(body.token_type).to.eql('bearer');
+      });
+      if (body.access_token) {
+          let expMs = Date.now() + 15 * 60 * 1000;
+          try {
+              const payload = body.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+              const claims = JSON.parse(atob(payload.padEnd(payload.length + (4 - payload.length % 4) % 4, '=')));
+              if (claims.exp) { expMs = claims.exp * 1000; }
+          } catch (e) {}
+          pm.environment.set('access_token', body.access_token);
+          pm.environment.set('access_token_expires_at', String(expMs));
+      }
+    language: text/javascript
+order: 1000

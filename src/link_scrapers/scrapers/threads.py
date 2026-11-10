@@ -20,17 +20,19 @@ from urllib.parse import urlparse
 import aiohttp
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from src.enums import Platform
+from src.link_scrapers.errors import ScraperStatusError
 from src.link_scrapers.settings import threads_settings
 from src.utils.basic import download_and_save_file
 from src.utils.logs import Logger
 from src.utils.tenacity_logs import (
-        tenacity_log_after,
-        tenacity_log_before,
-        tenacity_log_before_sleep,
+    tenacity_log_after,
+    tenacity_log_before,
+    tenacity_log_before_sleep,
 )
 
 SJS_SCRIPT_RE = re.compile(
-        r'<script type="application/json"[^>]*data-sjs[^>]*>(.*?)</script>', re.S
+    r'<script type="application/json"[^>]*data-sjs[^>]*>(.*?)</script>', re.S
 )
 
 
@@ -76,9 +78,18 @@ async def resolve_shortcode(url_or_code: str, session: aiohttp.ClientSession) ->
     if not threads_settings.SHARE_RE.search(url_or_code):
         return extract_shortcode(url_or_code)
     share_url = url_or_code if url_or_code.startswith("http") else f"https://{url_or_code}"
-    async with (threads_settings.SECONDS_LIMITER, threads_settings.HOUR_LIMITER,
-                session.get(share_url, headers=_headers(), allow_redirects=False,
-                            timeout=threads_settings.REQUEST_TIMEOUT) as response):
+    async with (
+        threads_settings.SECONDS_LIMITER,
+        threads_settings.HOUR_LIMITER,
+        session.get(
+            share_url,
+            headers=_headers(),
+            allow_redirects=False,
+            timeout=threads_settings.REQUEST_TIMEOUT,
+        ) as response,
+    ):
+        if response.status == 429:
+            raise ScraperStatusError(Platform.THREADS, "rate limited (429)")
         location = response.headers.get("location")
         if response.status not in (301, 302, 303, 307, 308) or not location:
             raise ThreadsFetchError(f"Share link {url_or_code!r} did not redirect to a post")
@@ -87,28 +98,34 @@ async def resolve_shortcode(url_or_code: str, session: aiohttp.ClientSession) ->
 
 def _headers() -> dict[str, str]:
     return {
-            "user-agent": threads_settings.USER_AGENT,
-            "accept": threads_settings.ACCEPT,
-            "accept-language": threads_settings.ACCEPT_LANGUAGE,
+        "user-agent": threads_settings.USER_AGENT,
+        "accept": threads_settings.ACCEPT,
+        "accept-language": threads_settings.ACCEPT_LANGUAGE,
     }
 
 
 @retry(
-        stop=stop_after_attempt(threads_settings.MAX_ATTEMPTS),
-        wait=wait_exponential(min=2, max=30),
-        retry=retry_if_exception_type(aiohttp.ClientError),
-        before=tenacity_log_before,
-        before_sleep=tenacity_log_before_sleep,
-        after=tenacity_log_after
+    stop=stop_after_attempt(threads_settings.MAX_ATTEMPTS),
+    wait=wait_exponential(min=2, max=30),
+    retry=retry_if_exception_type(aiohttp.ClientError),
+    before=tenacity_log_before,
+    before_sleep=tenacity_log_before_sleep,
+    after=tenacity_log_after,
 )
 async def fetch_post_html(shortcode: str, session: aiohttp.ClientSession) -> str:
     # Threads resolves the permalink from the shortcode alone; the handle segment is ignored.
     url = f"https://www.threads.com/post/{shortcode}"
-    async with (threads_settings.SECONDS_LIMITER, threads_settings.HOUR_LIMITER,
-                session.get(url, headers=_headers(),
-                            timeout=threads_settings.REQUEST_TIMEOUT) as response):
+    async with (
+        threads_settings.SECONDS_LIMITER,
+        threads_settings.HOUR_LIMITER,
+        session.get(
+            url,
+            headers=_headers(),
+            timeout=threads_settings.REQUEST_TIMEOUT,
+        ) as response,
+    ):
         if response.status == 429:
-            raise ThreadsFetchError("Rate limited by Threads; try again later")
+            raise ScraperStatusError(Platform.THREADS, "rate limited (429)")
         if response.status == 404:
             raise ThreadsFetchError(f"Post {shortcode!r} not found")
         response.raise_for_status()
@@ -138,8 +155,8 @@ def extract_post_json(html: str, shortcode: str) -> dict:
         if post:
             return post
     raise ThreadsFetchError(
-            f"No post data for {shortcode!r} in the page: the post is private/removed, or "
-            "Threads served the shell page (browser-like headers may have stopped working)"
+        f"No post data for {shortcode!r} in the page: the post is private/removed, or "
+        "Threads served the shell page (browser-like headers may have stopped working)"
     )
 
 
@@ -147,11 +164,21 @@ def _best_media(item: dict) -> MediaItem | None:
     videos = item.get("video_versions") or []
     if videos:
         best = max(videos, key=lambda v: v.get("width") or 0)
-        return MediaItem("video", best["url"], best.get("width"), best.get("height"))
+        return MediaItem(
+            "video",
+            best["url"],
+            best.get("width"),
+            best.get("height"),
+        )
     candidates = (item.get("image_versions2") or {}).get("candidates") or []
     if candidates:
         best = max(candidates, key=lambda c: c.get("width") or 0)
-        return MediaItem("image", best["url"], best.get("width"), best.get("height"))
+        return MediaItem(
+            "image",
+            best["url"],
+            best.get("width"),
+            best.get("height"),
+        )
     return None
 
 
@@ -159,8 +186,9 @@ def _text(post: dict) -> str:
     caption = (post.get("caption") or {}).get("text")
     if caption:
         return caption
-    fragments = ((post.get("text_post_app_info") or {}).get("text_fragments")
-                 or {}).get("fragments") or []
+    fragments = ((post.get("text_post_app_info") or {}).get("text_fragments") or {}).get(
+        "fragments"
+    ) or []
     return "".join(f.get("plaintext") or "" for f in fragments)
 
 
@@ -177,32 +205,45 @@ def parse_post(shortcode: str, post: dict) -> ThreadsPost:
     info = post.get("text_post_app_info") or {}
     taken_at = post.get("taken_at")
     return ThreadsPost(
-            shortcode=shortcode,
-            url=f"https://www.threads.com/post/{shortcode}",
-            username=(post.get("user") or {}).get("username"),
-            text=_text(post),
-            taken_at=datetime.fromtimestamp(taken_at, tz=UTC) if taken_at else None,
-            like_count=post.get("like_count"),
-            reply_count=_int(info.get("direct_reply_count")),
-            repost_count=_int(info.get("repost_count")),
-            media=media,
-            raw=post,
+        shortcode=shortcode,
+        url=f"https://www.threads.com/post/{shortcode}",
+        username=(post.get("user") or {}).get("username"),
+        text=_text(post),
+        taken_at=datetime.fromtimestamp(taken_at, tz=UTC) if taken_at else None,
+        like_count=post.get("like_count"),
+        reply_count=_int(info.get("direct_reply_count")),
+        repost_count=_int(info.get("repost_count")),
+        media=media,
+        raw=post,
     )
 
 
-async def download_media(post: ThreadsPost, directory: Path, session: aiohttp.ClientSession):
+async def download_media(
+    post: ThreadsPost,
+    directory: Path,
+    session: aiohttp.ClientSession,
+):
     directory.mkdir(parents=True, exist_ok=True)
     for index, item in enumerate(post.media, start=1):
-        suffix = Path(urlparse(item.url).path
-                      ).suffix or (".mp4" if item.kind == "video" else ".jpg")
+        suffix = Path(urlparse(item.url).path).suffix or (
+            ".mp4" if item.kind == "video" else ".jpg"
+        )
         destination = directory / f"{index:02d}{suffix}"
-        item.local_path = await download_and_save_file(item.url, destination, session)
-        Logger.info("Saved Threads media", path=str(destination), kind=item.kind)
+        item.local_path = await download_and_save_file(
+            item.url,
+            destination,
+            session,
+        )
+        Logger.info(
+            "Saved Threads media",
+            path=str(destination),
+            kind=item.kind,
+        )
 
 
 async def fetch_post(
-        url_or_code: str,
-        session: aiohttp.ClientSession,
+    url_or_code: str,
+    session: aiohttp.ClientSession,
 ) -> ThreadsPost:
     shortcode = await resolve_shortcode(url_or_code, session)
     html = await fetch_post_html(shortcode, session=session)

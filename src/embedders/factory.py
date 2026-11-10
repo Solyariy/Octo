@@ -5,9 +5,9 @@ from src.embedders.managers.omni_manager import OmniEmbeddingManager
 from src.embedders.models import Backend, EmbeddersEnum
 
 MANAGERS: dict[Backend, type[BaseEmbeddingManager]] = {
-        "sentence_transformers": GeneralEmbeddingManager,
-        "cosmos": CosmosEmbeddingManager,
-        "omni": OmniEmbeddingManager,
+    "sentence_transformers": GeneralEmbeddingManager,
+    "cosmos": CosmosEmbeddingManager,
+    "omni": OmniEmbeddingManager,
 }
 
 

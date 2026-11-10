@@ -1,0 +1,29 @@
+$kind: http-request
+description: "Re-runs the posts that failed in `task_id` and are still `FAILED`, as a new task. 202 with `log_id`, the new `task_id` and `post_ids`; 409 when the task is not failed or nothing is left to retry; 404 when missing. Starts the real pipeline. Stores the new `task_id`."
+url: "{{base_url}}/api/tasks/{{task_id}}/retry"
+method: POST
+scripts:
+  - type: beforeRequest
+    code: |-
+      if (!pm.variables.get('task_id')) {
+          console.warn('task_id is empty; run Process all pending or List tasks first');
+          pm.execution.skipRequest();
+      }
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('202 Accepted or 409 (not retryable)', () => pm.expect(pm.response.code).to.be.oneOf([202, 409]));
+      const body = pm.response.json();
+      if (pm.response.code === 202) {
+          pm.test('has log_id, task_id and post_ids', () => {
+              pm.expect(body.log_id).to.be.a('string');
+              pm.expect(body.task_id).to.be.a('string');
+              pm.expect(body.post_ids).to.be.an('array').that.is.not.empty;
+          });
+          pm.environment.set('log_id', body.log_id);
+          pm.environment.set('task_id', body.task_id);
+      } else {
+          pm.test('409 has detail', () => pm.expect(body.detail).to.be.a('string'));
+      }
+    language: text/javascript
+order: 3000

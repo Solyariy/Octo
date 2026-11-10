@@ -6,12 +6,12 @@
 
 ## Ownership
 
-- Owns `main.py` (FastAPI app, `lifespan`, uvicorn entrypoint), `settings.py` (`MainSettings`, `DBSettings`, `LOG_ID`) and `enums.py` (shared `StrEnum`s, e.g. `Platform`)
+- Owns `main.py` (FastAPI app, `lifespan`, uvicorn entrypoint), `settings.py` (`MainSettings`, `DBSettings`, `LOG_ID`) and `enums.py` (shared `StrEnum`s, e.g. `Platform`; `Platform.YOUTUBE` exists for `ScraperStatusError` only and is not accepted by `/save`)
 - Owns cross-package conventions listed below; delegates domain detail to `api/`, `db/`, `embedders/`, `link_scrapers/`, `services/`, `utils/`
 
 ## Local Contracts
 
-- `main.py` registers `src.api.middleware.trace_requests`, which binds one `LOG_ID` per request; every log line, background task and offloaded thread of that request shares it
+- `main.py` registers `src.api.middleware.trace_requests`; its first log line calls `src.utils.order.get_log_id()`, which binds a fresh `LOG_ID` for the request, so every log line, background task and offloaded thread of that request shares it
 - `src` is an import package rooted at the repository root: always use absolute imports (`from src.utils.logs import LoggerMixin`), never relative
 - Modules are importable from the repository root with no `sys.path` manipulation. No CLI `main()`, `argparse` or `__main__` blocks here except the server entrypoint in `main.py`; hand-run scripts go in `cli/` (see `cli/AGENTS.md`)
 - Configuration comes from pydantic-settings classes reading `.env`; secrets are never hardcoded. `MainSettings` has no defaults for `HF_AUTH_TOKEN`, `SECRET_KEY`, `ALGORITHM` and `ACCESS_TOKEN_EXPIRE_MINUTES`, so importing `src.settings` fails without a `.env` supplying all four
@@ -30,7 +30,7 @@
 ## Verification
 
 - `docker compose up --build` starts the API on `:8000` with Postgres and Qdrant; `GET /health` must return `{"ok": true}`
-- No test runner or type checker is configured; fix imports with `uv run ruff check --fix src`, then format with `uv run yapf -ir src`
+- No test runner or type checker is configured; format and lint-fix with `pyfmt src` (formatter rules in the root `AGENTS.md`)
 
 ## Child DOX Index
 
@@ -38,5 +38,5 @@
 - `db/AGENTS.md` — shared datastore rules; delegates to `db/postgres/AGENTS.md` and `db/qdrant/AGENTS.md`
 - `embedders/AGENTS.md` — embedding model registry, backend managers, manual model checks
 - `link_scrapers/AGENTS.md` — resolving social-media URLs (Instagram, Threads; standalone YouTube scraper) to fetchable media
-- `services/AGENTS.md` — `OmniPipeline`, the post-processing flow behind `POST /process/all`
+- `services/AGENTS.md` — `OmniPipeline`, the post-processing flow behind `POST /process/all` and task retries
 - `utils/AGENTS.md` — logging, type annotations, download and video helpers

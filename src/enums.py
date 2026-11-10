@@ -6,6 +6,9 @@ class Platform(StrEnum):
     THREADS = "threads"
     INSTAGRAM = "instagram"
 
+    # scraper only: named by `ScraperStatusError`, not accepted by `/save`
+    YOUTUBE = "youtube"
+
     # todo
     # TELEGRAM = "telegram"
     # TIKTOK = "tiktok"

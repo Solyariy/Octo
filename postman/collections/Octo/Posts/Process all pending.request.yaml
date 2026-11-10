@@ -1,0 +1,18 @@
+$kind: http-request
+description: Claims the caller's `PENDING` posts and runs the pipeline in the background. 202 with `log_id`, `task_id` and `post_ids`, or 200 with null `task_id` and empty `post_ids` when nothing is pending. Stores `log_id` and `task_id`.
+url: "{{base_url}}/process/all"
+method: POST
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('202 Accepted or 200 (nothing pending)', () => pm.expect(pm.response.code).to.be.oneOf([200, 202]));
+      const body = pm.response.json();
+      pm.test('has log_id and post_ids', () => {
+          pm.expect(body.log_id).to.be.a('string');
+          pm.expect(body.post_ids).to.be.an('array');
+      });
+      if (body.log_id) { pm.environment.set('log_id', body.log_id); }
+      if (body.task_id) { pm.environment.set('task_id', body.task_id); }
+      if (Array.isArray(body.post_ids) && body.post_ids.length && !pm.environment.get('post_id')) { pm.environment.set('post_id', body.post_ids[0]); }
+    language: text/javascript
+order: 2000

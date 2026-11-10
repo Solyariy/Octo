@@ -51,10 +51,10 @@ class OmniEmbeddingManager(GeneralEmbeddingManager):
                     vectors = self.encode_video(values, **kwargs)
             result[indices] = vectors
             self.log_info(
-                    "Encoded modality group",
-                    modality=modality,
-                    count=len(indices),
-                    duration_ms=round((time.perf_counter() - started) * 1000),
+                "Encoded modality group",
+                modality=modality,
+                count=len(indices),
+                duration_ms=round((time.perf_counter() - started) * 1000),
             )
         return result
 
@@ -73,21 +73,29 @@ class OmniEmbeddingManager(GeneralEmbeddingManager):
     def encode_video(self, videos: Sequence[str | Path], **kwargs) -> np.ndarray:
         self.load_model()
         chunks = []
-        for start in range(0, len(videos), self.VIDEO_CHUNK_SIZE):
-            batch = [self._as_video_input(v) for v in videos[start:start + self.VIDEO_CHUNK_SIZE]]
+        for start in range(
+            0,
+            len(videos),
+            self.VIDEO_CHUNK_SIZE,
+        ):
+            batch = [self._as_video_input(v) for v in videos[start : start + self.VIDEO_CHUNK_SIZE]]
             chunks.append(self._encode(batch, **kwargs))
         return np.concatenate(chunks) if chunks else np.zeros((0, self.output_dim), np.float32)
 
     def _encode(self, inputs: list[dict], **kwargs) -> np.ndarray:
-        return self.model.encode(inputs, **kwargs, truncate_dim=self.output_dim)
+        return self.model.encode(
+            inputs,
+            **kwargs,
+            truncate_dim=self.output_dim,
+        )
 
     def _as_video_input(self, path: str | Path) -> dict:
         duration = max(video_duration(path), 1e-3)
         num_frames = min(self.VIDEO_MAX_FRAMES, max(1, math.ceil(duration)))
         frames = [Image.fromarray(frame) for frame in sample_frames(path, num_frames)]
         metadata = {
-                "fps": num_frames / duration,
-                "total_num_frames": num_frames,
-                "duration": duration
+            "fps": num_frames / duration,
+            "total_num_frames": num_frames,
+            "duration": duration,
         }
         return {"video": {"array": frames, "video_metadata": metadata}}

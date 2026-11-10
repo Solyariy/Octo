@@ -16,7 +16,7 @@ COPY src/ ./src/
 COPY .env .env
 
 # Expose the application port
-EXPOSE 8000
+EXPOSE 8123
 
 # Run the FastAPI app with uvicorn
 CMD ["uv", "run", "python", "-m", "src.main"]
