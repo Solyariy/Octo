@@ -66,13 +66,15 @@ class PostgresManager(LoggerMixin):
 
     async def upsert_user(self, email: str, hashed_password: str) -> UserInfo:
         stmt = (
-                insert(UserPostgres).values(email=email,
-                                            hashed_password=hashed_password).on_conflict_do_update(
-                                                    index_elements=[UserPostgres.email],
-                                                    set_={
-                                                            "hashed_password": hashed_password
-                                                    },
-                                            ).returning(UserPostgres)
+            insert(UserPostgres).values(
+                email=email,
+                hashed_password=hashed_password
+                ).on_conflict_do_update(
+                index_elements=[UserPostgres.email],
+                set_={
+                    "hashed_password": hashed_password
+                },
+            ).returning(UserPostgres)
         )
         res = await self.__exec(stmt, commit=True)
         return UserInfo.model_validate(res.scalar_one())
@@ -80,25 +82,25 @@ class PostgresManager(LoggerMixin):
     async def insert_posts_bulk(self, posts: list[InputPost], user_info: UserInfo) -> list[Post]:
         """Insert as `PENDING`; urls that already exist are skipped and absent from the result."""
         stmt = (
-                insert(PostPostgres).values(
-                        [
-                                {
-                                        "url": post.url,
-                                        "platform": post.platform,
-                                        "status": ProcessingStatus.PENDING,
-                                        "user_id": user_info.id,
-                                } for post in posts
-                        ]
-                ).on_conflict_do_nothing().returning(PostPostgres)
+            insert(PostPostgres).values(
+                [
+                    {
+                        "url": post.url,
+                        "platform": post.platform,
+                        "status": ProcessingStatus.PENDING,
+                        "user_id": user_info.id,
+                    } for post in posts
+                ]
+            ).on_conflict_do_nothing().returning(PostPostgres)
         )
         res = await self.__exec(stmt, commit=True)
         inserted = [Post.model_validate(r) for r in res.scalars()]
         self.log_info(
-                "Posts inserted",
-                user_id=str(user_info.id),
-                received=len(posts),
-                inserted=len(inserted),
-                skipped_duplicates=len(posts) - len(inserted),
+            "Posts inserted",
+            user_id=str(user_info.id),
+            received=len(posts),
+            inserted=len(inserted),
+            skipped_duplicates=len(posts) - len(inserted),
         )
         return inserted
 
@@ -108,18 +110,18 @@ class PostgresManager(LoggerMixin):
         One `UPDATE ... RETURNING`, so concurrent callers can never claim the same row.
         """
         stmt = (
-                update(PostPostgres).where(
-                        PostPostgres.user_id == user_id,
-                        PostPostgres.status == ProcessingStatus.PENDING,
-                ).values(status=ProcessingStatus.IN_PROCESS).returning(PostPostgres)
+            update(PostPostgres).where(
+                PostPostgres.user_id == user_id,
+                PostPostgres.status == ProcessingStatus.PENDING,
+            ).values(status=ProcessingStatus.IN_PROCESS).returning(PostPostgres)
         )
         res = await self.__exec(stmt, commit=True)
         claimed = [Post.model_validate(r) for r in res.scalars()]
         self.log_info(
-                "Pending posts claimed",
-                user_id=str(user_id),
-                count=len(claimed),
-                post_ids=[str(p.id) for p in claimed],
+            "Pending posts claimed",
+            user_id=str(user_id),
+            count=len(claimed),
+            post_ids=[str(p.id) for p in claimed],
         )
         return claimed
 
@@ -129,17 +131,17 @@ class PostgresManager(LoggerMixin):
         stmt = update(PostPostgres).where(PostPostgres.id.in_(ids)).values(status=status)
         await self.__exec(stmt, commit=True)
         self.log_info(
-                "Post status updated",
-                status=status,
-                count=len(ids),
-                post_ids=[str(i) for i in ids]
+            "Post status updated",
+            status=status,
+            count=len(ids),
+            post_ids=[str(i) for i in ids]
         )
 
     async def get_post(self, user_id: StrUUID, post_id: StrUUID) -> Post | None:
         """The post, or None when it does not exist or belongs to another user."""
         stmt = select(PostPostgres).where(
-                PostPostgres.id == post_id,
-                PostPostgres.user_id == user_id,
+            PostPostgres.id == post_id,
+            PostPostgres.user_id == user_id,
         )
         res = await self.__exec(stmt, commit=False)
         row = res.scalar_one_or_none()
@@ -150,8 +152,8 @@ class PostgresManager(LoggerMixin):
         if not ids:
             return {}
         stmt = select(PostPostgres).where(
-                PostPostgres.id.in_(ids),
-                PostPostgres.user_id == user_id,
+            PostPostgres.id.in_(ids),
+            PostPostgres.user_id == user_id,
         )
         res = await self.__exec(stmt, commit=False)
         return {row.id: Post.model_validate(row) for row in res.scalars()}

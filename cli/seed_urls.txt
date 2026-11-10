@@ -1,0 +1,12 @@
+# Seed post urls for `make seed`: one url per line, blank lines and `#` comments are ignored.
+# Keep urls free of share/tracking query params, so the unique `posts.url` dedups them.
+https://www.instagram.com/reel/DfLSMIcz3BM/
+https://www.instagram.com/reel/DfaYakrppqn/
+https://www.instagram.com/reel/DfU6xmquN04/
+https://www.instagram.com/reel/DffI0OZg8UV/
+https://www.instagram.com/reel/DeonIOLt7Ai/
+https://www.instagram.com/reel/DfhJV53oyPi/
+https://www.instagram.com/reel/DfeUgzwxW7t/
+https://www.instagram.com/reel/DffuYYmuyWY/
+https://www.instagram.com/reel/DfU8az_uGCB/
+https://www.instagram.com/reel/DfhaNcnBP21/

@@ -29,4 +29,4 @@
 
 ## Verification
 
-- `make server`, `POST /save`, then `POST /process/all` with an `X-Request-ID` header. Grep the server log for that id: every stage must appear, and `psql` must show no `in_process` rows once `Pipeline finished` is logged
+- `make up`, `POST /save`, then `POST /process/all` with an `X-Request-ID` header. Grep the server log for that id: every stage must appear, and `psql` must show no `in_process` rows once `Pipeline finished` is logged
