@@ -19,6 +19,8 @@ class MainSettings(BaseSettings):
     THREADS_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "threads"
     YOUTUBE_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "youtube"
     RECIPES_TEMP_DIR_PATH: Path = TEMP_DIR_PATH / "recipes"
+    # llama.cpp server binary for GGUF recipe-parser models (name on PATH or absolute path)
+    LLAMA_SERVER_BIN: str = "llama-server"
 
     HF_AUTH_TOKEN: SecretStr
 

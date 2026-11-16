@@ -10,6 +10,7 @@ CLI: `uv run python -m cli.instagram_html <reel-or-post-url> [--out raw.json] [-
 
 import json
 import re
+import time
 from collections.abc import Iterator
 
 import aiohttp
@@ -23,6 +24,7 @@ from src.link_scrapers.scrapers.instagram_common import (
     extract_shortcode,
 )
 from src.link_scrapers.settings import instagram_settings
+from src.utils.logs import Logger
 from src.utils.tenacity_logs import (
     tenacity_log_after,
     tenacity_log_before,
@@ -58,26 +60,41 @@ async def _get_html(
     shortcode: str,
     session: aiohttp.ClientSession,
 ) -> str:
+    queued = time.monotonic()
     async with (
         instagram_settings.SECONDS_LIMITER,
         instagram_settings.HOUR_LIMITER,
-        session.get(
+    ):
+        # tenacity's "Sending request" fires before the limiter wait; this marks the real send.
+        Logger.info(
+            event="[instagram_html]",
+            msg="limiter acquired",
+            url=url,
+            waited_s=round(time.monotonic() - queued, 1),
+        )
+        async with session.get(
             url,
             headers=_headers(),
             timeout=instagram_settings.HTML_REQUEST_TIMEOUT,
-        ) as response,
-    ):
-        if response.status == 429:
-            raise ScraperStatusError(Platform.INSTAGRAM, "rate limited (429)")
-        if response.url.path.startswith(_BLOCK_PATH_PREFIXES):
-            raise ScraperStatusError(
-                Platform.INSTAGRAM,
-                f"login wall (redirected to {response.url.path})",
+        ) as response:
+            return await _read_html(
+                response,
+                shortcode,
             )
-        if response.status == 404:
-            raise InstagramFetchError(f"Post {shortcode!r} not found")
-        response.raise_for_status()
-        return await response.text()
+
+
+async def _read_html(response: aiohttp.ClientResponse, shortcode: str) -> str:
+    if response.status == 429:
+        raise ScraperStatusError(Platform.INSTAGRAM, "rate limited (429)")
+    if response.url.path.startswith(_BLOCK_PATH_PREFIXES):
+        raise ScraperStatusError(
+            Platform.INSTAGRAM,
+            f"login wall (redirected to {response.url.path})",
+        )
+    if response.status == 404:
+        raise InstagramFetchError(f"Post {shortcode!r} not found")
+    response.raise_for_status()
+    return await response.text()
 
 
 async def fetch_permalink_html(shortcode: str, session: aiohttp.ClientSession) -> str:

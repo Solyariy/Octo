@@ -10,6 +10,7 @@ Runs are stage-major so exactly one model is in memory at a time.
 
 import csv
 import json
+import shutil
 import statistics
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
@@ -53,6 +54,37 @@ PIPELINES: dict[str, PipelineConfig] = {
         M.HF_QWEN35_2B_OCR,
         M.HF_GEMMA4_E4B,
     ),
+    # Same ASR + OCR as hf-gemma, so only the SLM differs between these and hf-gemma
+    "hf-qwen-q2ocr": PipelineConfig(
+        M.HF_WHISPER_TURBO,
+        M.HF_QWEN35_2B_OCR,
+        M.HF_QWEN35_4B,
+    ),
+    "gguf-qwen9b": PipelineConfig(
+        M.HF_WHISPER_TURBO,
+        M.HF_QWEN35_2B_OCR,
+        M.GGUF_QWEN35_9B,
+    ),
+    "gguf-qwen27b": PipelineConfig(
+        M.HF_WHISPER_TURBO,
+        M.HF_QWEN35_2B_OCR,
+        M.GGUF_QWEN35_27B,
+    ),
+    "gguf-qwen35b": PipelineConfig(
+        M.HF_WHISPER_TURBO,
+        M.HF_QWEN35_2B_OCR,
+        M.GGUF_QWEN35_35B_A3B,
+    ),
+    "gguf-gemma12b": PipelineConfig(
+        M.HF_WHISPER_TURBO,
+        M.HF_QWEN35_2B_OCR,
+        M.GGUF_GEMMA4_12B,
+    ),
+    "gguf-gemma26b": PipelineConfig(
+        M.HF_WHISPER_TURBO,
+        M.HF_QWEN35_2B_OCR,
+        M.GGUF_GEMMA4_26B_A4B,
+    ),
     "mlx-qwen9b": PipelineConfig(
         M.MLX_WHISPER_TURBO,
         M.MLX_PADDLEOCR_VL,
@@ -87,23 +119,46 @@ def read_urls(path: Path) -> list[str]:
 
 
 async def prepare_reel(url: str, session: aiohttp.ClientSession) -> Reel:
-    """Scrape and download one reel unless it is already cached."""
+    """Return a cached reel; otherwise reuse a `cli.instagram_html` download or scrape it.
+
+    Downloads are never deleted, so each reel hits Instagram at most once.
+    """
     shortcode = extract_shortcode(url)
     cached = load_reel(shortcode)
     if cached is not None:
         return cached
-    data = await fetch_reel(url, session=session)
-    if not data.video_url:
-        raise ValueError(f"{shortcode} has no video")
     directory = media_dir(shortcode)
-    await download_reel(
-        data,
-        directory,
-        session,
-    )
-    meta = {"url": url, "shortcode": shortcode, "username": data.username}
+    meta = {"url": url, "shortcode": shortcode, "username": None}
+    if not _reuse_instagram_download(shortcode, directory):
+        data = await fetch_reel(url, session=session)
+        if not data.video_url:
+            raise ValueError(f"{shortcode} has no video")
+        await download_reel(
+            data,
+            directory,
+            session,
+        )
+        meta["username"] = data.username
     (directory / "meta.json").write_text(json.dumps(meta, indent=2))
     return load_reel(shortcode)
+
+
+def _reuse_instagram_download(shortcode: str, directory: Path) -> bool:
+    """Copy `INSTAGRAM_TEMP_DIR_PATH/<shortcode>/{video.mp4,caption.txt}` if both exist."""
+    source = main_settings.INSTAGRAM_TEMP_DIR_PATH / shortcode
+    names = ("video.mp4", "caption.txt")
+    if not all((source / n).exists() for n in names):
+        return False
+    directory.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        shutil.copy2(source / name, directory / name)
+    Logger.info(
+        event="[bench]",
+        msg="reused instagram download",
+        reel=shortcode,
+        source=str(source),
+    )
+    return True
 
 
 def load_reel(shortcode: str) -> Reel | None:

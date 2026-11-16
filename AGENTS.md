@@ -101,6 +101,7 @@ Default section order:
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 
 - Supported content languages are English and Ukrainian only; never add Russian handling (keywords, prompts, language hints). Ukrainian is accepted as input, but extracted structured output (e.g. recipes) is always English
+- Keep scraped media under `temp/` and reuse it; never delete downloaded test data, and never re-scrape what is already on disk (avoids IP blocks)
 
 ## Child DOX Index
 
@@ -108,4 +109,4 @@ When the user requests a durable behavior change, record it here or in the relev
 - `alembic/AGENTS.md` — Postgres migration environment, revision layout, and the generate/apply workflow
 - `cli/AGENTS.md` — every hand-run CLI and smoke-test script; CLI entrypoints never live in `src`
 - `postman/AGENTS.md` — Postman collection + local environment for every endpoint, with automatic JWT login/refresh
-- Root owns packaging (`pyproject.toml`, `uv.lock`), the `Makefile` (dev shortcuts), containerization (`Dockerfile`, `docker-compose.yml`, `.dockerignore`), `alembic.ini`, ignore files, `README.md`, and `docs/` (work handoffs, e.g. `docs/recipe-parser-handoff.md`)
+- Root owns packaging (`pyproject.toml`, `uv.lock`), the `Makefile` (dev shortcuts), containerization (`Dockerfile`, `docker-compose.yml`, `.dockerignore`), `alembic.ini`, ignore files, `README.md`, and `docs/` (work handoffs: `recipe-parser-handoff.md` module history, `recipe-model-benchmark-handoff.md` model results, `pc-ssh-gpu-handoff.md` running GPU jobs on the Ubuntu PC via `ssh pc` + llama-server)

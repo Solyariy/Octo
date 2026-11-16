@@ -1,18 +1,48 @@
-import json
+import re
 
 from src.recipe_parser.schemas import Evidence, Recipe
 
 Message = dict[str, str]
 
-_SCHEMA = json.dumps(Recipe.model_json_schema(), ensure_ascii=False)
+# The shape, not a JSON Schema: small models echo a pasted schema (`$defs`, `properties`) or
+# wrap the answer under its title (`{"Recipe": {...}}`). Keep in sync with `schemas.Recipe`.
+RECIPE_SHAPE = """{
+  "title": string or null,
+  "servings": integer or null,
+  "ingredients": [
+    {"name": string, "quantity": number or string or null, "unit": string or null,
+     "notes": string or null}
+  ],
+  "steps": [
+    {"order": integer, "instruction": string, "method": string or null,
+     "temperature": {"value": number, "unit": "C" or "F"} or null,
+     "duration_min": number or null}
+  ],
+  "cooking_methods": [string],
+  "equipment": [string],
+  "total_time_min": number or null
+}"""
+_shape_keys = set(
+    re.findall(
+        r'^  "(\w+)":',
+        RECIPE_SHAPE,
+        re.MULTILINE,
+    )
+)
+if _shape_keys != set(Recipe.model_fields):
+    raise RuntimeError(f"RECIPE_SHAPE keys {sorted(_shape_keys)} != Recipe fields")
 
 SYSTEM_PROMPT = f"""You extract cooking recipes from Instagram reels into JSON.
 Sources are in English or Ukrainian. Every value you output (title, ingredient names, units,
 notes, instructions, methods, equipment) MUST be written in English; translate Ukrainian.
 
 Rules:
-- Output exactly one JSON object matching this JSON Schema, and nothing else:
-{_SCHEMA}
+- Output exactly one JSON object with exactly these top-level keys, filled with the recipe:
+{RECIPE_SHAPE}
+- The object starts with "title". Do not wrap it in another key, do not output a schema,
+  and do not add other keys.
+- Copy every ingredient and every step the sources contain; empty lists only when the sources
+  have no recipe.
 - Use only facts present in the sources. Never invent quantities, temperatures or times:
   use null when they are not stated. Quantities are optional.
 - quantity is a number when one is stated (convert fractions: 1/2 -> 0.5), otherwise a short

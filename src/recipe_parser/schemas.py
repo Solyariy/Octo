@@ -1,12 +1,19 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 MIN_INGREDIENTS = 3
 MIN_STEPS = 1
 
 
-class Ingredient(BaseModel):
+class StrictModel(BaseModel):
+    """Unknown keys fail validation, so a wrapped object (`{"Recipe": {...}}`) or an echoed
+    JSON Schema is a validation error fed back to the model, not a silently empty recipe."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class Ingredient(StrictModel):
     name: str = Field(min_length=1, description="Ingredient name in English")
     quantity: float | str | None = Field(
         default=None,
@@ -22,12 +29,12 @@ class Ingredient(BaseModel):
     )
 
 
-class Temperature(BaseModel):
+class Temperature(StrictModel):
     value: float
     unit: Literal["C", "F"]
 
 
-class Step(BaseModel):
+class Step(StrictModel):
     order: int = Field(ge=1)
     instruction: str = Field(min_length=1, description="What to do, in English")
     method: str | None = Field(
@@ -38,7 +45,7 @@ class Step(BaseModel):
     duration_min: float | None = Field(default=None, ge=0)
 
 
-class Recipe(BaseModel):
+class Recipe(StrictModel):
     title: str | None = None
     servings: int | None = Field(default=None, ge=1)
     ingredients: list[Ingredient] = Field(default_factory=list)

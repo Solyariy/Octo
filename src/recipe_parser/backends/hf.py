@@ -40,6 +40,44 @@ def _hf_kwargs(model: ParserModelsEnum) -> dict:
     )
 
 
+class _CpuModule:
+    """A submodule detached from its model so `model.to(device)` leaves it on CPU.
+
+    Inputs move to CPU, outputs move back to `device`. Only for lookup-style modules.
+    """
+
+    def __init__(self, module: torch.nn.Module, device: torch.device):
+        self.module = module
+        self.device = device
+
+    def __call__(self, *args: torch.Tensor) -> torch.Tensor:
+        return self.module(*(arg.cpu() for arg in args)).to(self.device)
+
+
+def _to_device(
+    model: torch.nn.Module,
+    device: torch.device,
+    cpu_modules: tuple[str, ...],
+) -> torch.nn.Module:
+    """`model.to(device)`, except `cpu_modules` stay on CPU when the device is CUDA."""
+    if device.type != "cuda" or not cpu_modules:
+        return model.to(device)
+    detached = []
+    for path in cpu_modules:
+        parent_path, _, name = path.rpartition(".")
+        parent = model.get_submodule(parent_path)
+        detached.append((parent, name, parent._modules.pop(name)))
+    model.to(device)
+    for parent, name, module in detached:
+        # A plain instance attribute: invisible to `.to()`, still found by `self.<name>(...)`.
+        object.__setattr__(
+            parent,
+            name,
+            _CpuModule(module, device),
+        )
+    return model
+
+
 def _free_torch_cache(device: torch.device) -> None:
     if device.type == "mps":
         torch.mps.empty_cache()
@@ -145,11 +183,16 @@ class HfChatModel(TextGenerator, FrameReader):
                 f"{self.info.value}: AutoProcessor returned an mlx-vlm processor; do not mix "
                 "mlx-vlm and transformers chat models in one process"
             )
-        self.model = AutoModelForImageTextToText.from_pretrained(
+        model = AutoModelForImageTextToText.from_pretrained(
             self.repo,
             dtype=self.dtype,
             **kwargs,
-        ).to(self.device)
+        )
+        self.model = _to_device(
+            model,
+            self.device,
+            self.info.get_spec().cpu_modules,
+        )
         self.model.eval()
 
     def _unload(self) -> None:

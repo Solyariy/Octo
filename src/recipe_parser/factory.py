@@ -1,5 +1,6 @@
 from src.recipe_parser.backends.base import BaseParserModel, FrameReader, TextGenerator, Transcriber
 from src.recipe_parser.backends.hf import HfChatModel, HfWhisperTranscriber
+from src.recipe_parser.backends.llamacpp import LlamaCppTextGenerator
 from src.recipe_parser.backends.mlx import MlxFrameReader, MlxTextGenerator, MlxWhisperTranscriber
 from src.recipe_parser.models import ParserBackend, ParserModelsEnum, ParserRole
 
@@ -10,6 +11,7 @@ MODELS: dict[tuple[ParserRole, ParserBackend], type[BaseParserModel]] = {
     (ParserRole.OCR, "mlx"): MlxFrameReader,
     (ParserRole.SLM, "transformers"): HfChatModel,
     (ParserRole.SLM, "mlx"): MlxTextGenerator,
+    (ParserRole.SLM, "llamacpp"): LlamaCppTextGenerator,
 }
 
 
