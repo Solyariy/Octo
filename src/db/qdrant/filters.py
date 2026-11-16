@@ -51,9 +51,13 @@ class QdrantFilter(BaseFilterModel):
         for field_name in cls.model_fields:
             key, operator = _split(field_name)
             if key not in payload_fields:
-                raise TypeError(f"{cls.__name__}.{field_name}: {key!r} is not a payload field")
+                raise TypeError(
+                    f"{cls.__name__}.{field_name}: {key!r} is not a payload field",
+                )
             if operator not in _SUPPORTED_OPERATORS:
-                raise TypeError(f"{cls.__name__}.{field_name}: unsupported operator {operator!r}")
+                raise TypeError(
+                    f"{cls.__name__}.{field_name}: unsupported operator {operator!r}",
+                )
 
     def filter_qdrant(self, must: Iterable[models.Condition] = ()) -> models.Filter:
         """Build the Qdrant filter; `must` (e.g. user scoping) is always applied first."""
@@ -73,7 +77,9 @@ class QdrantFilter(BaseFilterModel):
                 case "not_in":
                     must_not.append(self._match_any(key, value))
                 case "isnull":
-                    condition = models.IsNullCondition(is_null=models.PayloadField(key=key))
+                    condition = models.IsNullCondition(
+                        is_null=models.PayloadField(key=key),
+                    )
                     (must if value else must_not).append(condition)
                 case op if op in _RANGE_OPERATORS:
                     ranges.setdefault(key, {})[op] = value
@@ -92,7 +98,10 @@ class QdrantFilter(BaseFilterModel):
 
     @staticmethod
     def _match_value(key: str, value: Any) -> models.FieldCondition:
-        return models.FieldCondition(key=key, match=models.MatchValue(value=_payload_value(value)))
+        return models.FieldCondition(
+            key=key,
+            match=models.MatchValue(value=_payload_value(value)),
+        )
 
     @staticmethod
     def _match_any(key: str, values: list[Any]) -> models.FieldCondition:

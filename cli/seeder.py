@@ -37,7 +37,9 @@ async def seed(path: Path, email: str) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Insert seed post urls as PENDING posts")
+    parser = argparse.ArgumentParser(
+        description="Insert seed post urls as PENDING posts",
+    )
     parser.add_argument(
         "--file",
         type=Path,

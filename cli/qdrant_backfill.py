@@ -16,7 +16,9 @@ async def backfill(*, dry_run: bool) -> int:
     collection = get_collection(OmniPipeline.EMBEDDER).collection_name
     async with postgres_lifespan() as (_, session_factory), qdrant_client_lifespan() as client:
         await init_qdrant_collections(client)  # makes sure the created_at index exists
-        posts = await PostgresManager(session_factory).get_posts_by_status(ProcessingStatus.SUCCESS)
+        posts = await PostgresManager(session_factory).get_posts_by_status(
+            ProcessingStatus.SUCCESS,
+        )
         print(f"{len(posts)} success posts; collection={collection}; dry_run={dry_run}")
         for post in posts:
             created_at = post.created_at.isoformat()

@@ -13,6 +13,18 @@ class InstagramSettings(BaseSettings):
     DOC_ID: str = "24368985919464652"
     USER_AGENT: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     REQUEST_TIMEOUT: aiohttp.ClientTimeout = aiohttp.ClientTimeout(total=10)
+    # HTML scraper (`instagram_html`): the logged-out permalink embeds the post JSON only for
+    # browser-like navigations, so it reuses the Threads Safari UA and document `Accept`.
+    PERMALINK_URL: str = "https://www.instagram.com/p/{shortcode}/"
+    EMBED_URL: str = "https://www.instagram.com/p/{shortcode}/embed/captioned/"
+    HTML_USER_AGENT: str = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+        "(KHTML, like Gecko) Version/17.5 Safari/605.1.15"
+    )
+    HTML_ACCEPT: str = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    ACCEPT_LANGUAGE: str = "en-US,en;q=0.9"
+    HTML_REQUEST_TIMEOUT: aiohttp.ClientTimeout = aiohttp.ClientTimeout(total=20)
+    # One budget shared by both Instagram scrapers.
     SECONDS_LIMITER: aiolimiter.AsyncLimiter = aiolimiter.AsyncLimiter(1, 60)
     HOUR_LIMITER: aiolimiter.AsyncLimiter = aiolimiter.AsyncLimiter(60, 3600)
     MAX_ATTEMPTS: int = 3

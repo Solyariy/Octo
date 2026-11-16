@@ -51,6 +51,15 @@ dependencies = [
 dev = [
     "ruff>=0.16.10",
 ]
+mlx = [
+    "mlx-lm>=0.32.2 ; sys_platform == 'darwin'",
+    "mlx-vlm>=0.7.12 ; sys_platform == 'darwin'",
+    "mlx-whisper>=0.4.3 ; sys_platform == 'darwin'",
+]
+
+[tool.uv]
+# The mlx group only resolves on macOS (darwin markers), so Docker installs nothing from it.
+default-groups = ["dev", "mlx"]
 
 [tool.ruff]
 line-length = 100

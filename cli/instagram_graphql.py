@@ -1,9 +1,9 @@
 """Fetch an Instagram reel/post through `src.link_scrapers.instagram_graphql`, print it and
-save the video to `INSTAGRAM_TEMP_DIR_PATH/test.mp4`.
+save its video and description to `INSTAGRAM_TEMP_DIR_PATH/<shortcode>/{video.mp4,caption.txt}`.
 
 Run with:
 
-    uv run python -m cli.instagram_graphql <reel-or-post-url> [--out raw.json]
+    uv run python -m cli.instagram_graphql <reel-or-post-url> [--out raw.json] [--no-download]
 """
 
 import argparse
@@ -12,11 +12,13 @@ import json
 
 import aiohttp
 
+from src.link_scrapers.errors import ScraperStatusError
+from src.link_scrapers.scrapers.instagram_common import InstagramFetchError, download_reel
 from src.link_scrapers.scrapers.instagram_graphql import fetch_reel
 from src.settings import main_settings
 
 
-async def main() -> None:
+async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("url", help="Reel/post URL or bare shortcode")
     parser.add_argument(
@@ -25,17 +27,32 @@ async def main() -> None:
         default=None,
         help="Optional path to dump the raw JSON response",
     )
+    parser.add_argument(
+        "--no-download",
+        action="store_true",
+        help="Skip saving the video and description",
+    )
     args = parser.parse_args()
 
     async with aiohttp.ClientSession() as session:
-        data = await fetch_reel(args.url, session=session)
-        print(data)
-        if data.video_url:
-            async with session.get(data.video_url) as video_resp:
-                video_resp.raise_for_status()
-                raw = await video_resp.read()
-            with open(main_settings.INSTAGRAM_TEMP_DIR_PATH / "test.mp4", "wb") as f:
-                f.write(raw)
+        try:
+            data = await fetch_reel(args.url, session=session)
+        except (InstagramFetchError, ScraperStatusError) as exc:
+            print(f"Instagram fetch failed: {exc}")
+            return 1
+        if not args.no_download:
+            directory = main_settings.INSTAGRAM_TEMP_DIR_PATH / data.shortcode
+            await download_reel(
+                data,
+                directory,
+                session,
+            )
+
+    print(f"@{data.username} likes={data.like_count} comments={data.comment_count}")
+    print(data.caption or "<no description>")
+    print(f"video: {data.video_local_path or data.video_url or '<no video>'}")
+    if data.caption_local_path:
+        print(f"description: {data.caption_local_path}")
 
     if args.out:
         with open(args.out, "w") as f:
@@ -43,9 +60,11 @@ async def main() -> None:
                 data.raw,
                 f,
                 indent=2,
+                ensure_ascii=False,
             )
         print(f"Saved raw response to {args.out}")
+    return 0
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    raise SystemExit(asyncio.run(main()))

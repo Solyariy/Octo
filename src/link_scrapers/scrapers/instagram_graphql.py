@@ -6,12 +6,12 @@ No login or API key is required: a short-lived `csrftoken` cookie is pulled from
 GET to instagram.com and replayed on the GraphQL POST alongside a fixed `x-ig-app-id` and
 `doc_id`, both public constants embedded in Instagram's own web client.
 
+Standalone: `LinkScraper` uses `instagram_html` instead (this route gets 401-throttled fast).
+
 CLI: `uv run python -m cli.instagram_graphql <reel-or-post-url>`
 """
 
 import json
-import re
-from dataclasses import dataclass
 from urllib.parse import quote
 
 import aiohttp
@@ -19,37 +19,17 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 from src.enums import Platform
 from src.link_scrapers.errors import ScraperStatusError
+from src.link_scrapers.scrapers.instagram_common import (
+    InstagramFetchError,
+    ReelData,
+    extract_shortcode,
+)
 from src.link_scrapers.settings import instagram_settings
 from src.utils.tenacity_logs import (
     tenacity_log_after,
     tenacity_log_before,
     tenacity_log_before_sleep,
 )
-
-
-class InstagramFetchError(Exception):
-    pass
-
-
-@dataclass
-class ReelData:
-    shortcode: str
-    caption: str | None
-    like_count: int | None
-    comment_count: int | None
-    video_url: str | None
-    thumbnail_url: str | None
-    username: str | None
-    raw: dict
-
-
-def extract_shortcode(url_or_code: str) -> str:
-    match = instagram_settings.SHORTCODE_RE.search(url_or_code)
-    if match:
-        return match.group(1)
-    if re.fullmatch(r"[A-Za-z0-9_-]+", url_or_code):
-        return url_or_code
-    raise ValueError(f"Could not extract a shortcode from {url_or_code!r}")
 
 
 async def _csrf_token(session: aiohttp.ClientSession) -> str:
@@ -74,7 +54,10 @@ async def _csrf_token(session: aiohttp.ClientSession) -> str:
     before_sleep=tenacity_log_before_sleep,
     after=tenacity_log_after,
 )
-async def fetch_reel_json(shortcode_or_url: str, session: aiohttp.ClientSession) -> dict:
+async def fetch_reel_json(
+    shortcode_or_url: str,
+    session: aiohttp.ClientSession,
+) -> dict:
     shortcode = extract_shortcode(shortcode_or_url)
     csrf_token = await _csrf_token(session)
 
@@ -118,7 +101,12 @@ async def fetch_reel_json(shortcode_or_url: str, session: aiohttp.ClientSession)
 
 def parse_reel_data(shortcode: str, payload: dict) -> ReelData:
     items = (
-        payload.get("data", {}).get("xdt_api__v1__media__shortcode__web_info", {}).get("items", [])
+        payload.get("data", {})
+        .get("xdt_api__v1__media__shortcode__web_info", {})
+        .get(
+            "items",
+            [],
+        )
     )
     if not items:
         raise InstagramFetchError(f"No media items in response for {shortcode!r}")
@@ -139,6 +127,7 @@ def parse_reel_data(shortcode: str, payload: dict) -> ReelData:
         thumbnail_url=thumbnail_url,
         username=(item.get("user") or {}).get("username"),
         raw=payload,
+        source="graphql",
     )
 
 

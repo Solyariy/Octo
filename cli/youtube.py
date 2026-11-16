@@ -16,7 +16,10 @@ from src.settings import main_settings
 
 async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("url", help="YouTube watch/shorts/youtu.be URL or bare video id")
+    parser.add_argument(
+        "url",
+        help="YouTube watch/shorts/youtu.be URL or bare video id",
+    )
     parser.add_argument(
         "--out",
         type=str,

@@ -92,7 +92,11 @@ class PostgresManager(LoggerMixin):
         res = await self.__exec(stmt, commit=True)
         return UserInfo.model_validate(res.scalar_one())
 
-    async def insert_posts_bulk(self, posts: list[InputPost], user_info: UserInfo) -> list[Post]:
+    async def insert_posts_bulk(
+        self,
+        posts: list[InputPost],
+        user_info: UserInfo,
+    ) -> list[Post]:
         """Insert as `PENDING`; urls that already exist are skipped and absent from the result."""
         stmt = (
             insert(PostPostgres)
@@ -353,7 +357,11 @@ class PostgresManager(LoggerMixin):
         row = res.one_or_none()
         return self._to_task(*row) if row is not None else None
 
-    async def get_task_detail(self, user_id: StrUUID, task_id: StrUUID) -> TaskDetail | None:
+    async def get_task_detail(
+        self,
+        user_id: StrUUID,
+        task_id: StrUUID,
+    ) -> TaskDetail | None:
         """The task with every post and its outcome in this task; None like `get_task`."""
         task = await self.get_task(user_id=user_id, task_id=task_id)
         if task is None:
@@ -386,7 +394,11 @@ class PostgresManager(LoggerMixin):
         row = res.scalar_one_or_none()
         return Post.model_validate(row) if row is not None else None
 
-    async def get_posts_by_ids(self, user_id: StrUUID, ids: list[StrUUID]) -> dict[UUID, Post]:
+    async def get_posts_by_ids(
+        self,
+        user_id: StrUUID,
+        ids: list[StrUUID],
+    ) -> dict[UUID, Post]:
         """The user's posts among `ids`, keyed by id; ids of other users' posts are dropped."""
         if not ids:
             return {}

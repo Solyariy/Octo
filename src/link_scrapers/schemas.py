@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 from src.enums import Platform
-from src.link_scrapers.scrapers.instagram_graphql import ReelData
+from src.link_scrapers.scrapers.instagram_common import ReelData
 from src.link_scrapers.scrapers.threads import ThreadsPost
 
 

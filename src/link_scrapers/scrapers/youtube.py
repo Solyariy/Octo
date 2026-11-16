@@ -129,7 +129,9 @@ def _selected_video_format(info: dict) -> dict:
 def parse_video(info: dict) -> YouTubeVideo:
     video_id = info.get("id") or ""
     if info.get("live_status") in _UNDOWNLOADABLE_LIVE_STATUSES:
-        raise YouTubeFetchError(f"Video {video_id!r} is a live stream ({info['live_status']})")
+        raise YouTubeFetchError(
+            f"Video {video_id!r} is a live stream ({info['live_status']})",
+        )
     upload_date = info.get("upload_date")
     fmt = _selected_video_format(info)
     return YouTubeVideo(

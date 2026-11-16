@@ -16,5 +16,7 @@ def get_embedding_manager(model: EmbeddersEnum) -> BaseEmbeddingManager:
     backend = model.get_backend()
     manager_cls = MANAGERS.get(backend)
     if manager_cls is None:
-        raise ValueError(f"No manager registered for backend {backend!r} ({model.value})")
+        raise ValueError(
+            f"No manager registered for backend {backend!r} ({model.value})",
+        )
     return manager_cls(model)

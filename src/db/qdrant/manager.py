@@ -55,7 +55,10 @@ class QdrantManager(LoggerMixin):
         `query_points_groups` has no offset, so the first `offset + limit` groups are fetched
         and sliced; callers cap `limit` and the page depth through their pagination params.
         """
-        user_scope = FieldCondition(key="user_id", match=MatchValue(value=str(user_info.id)))
+        user_scope = FieldCondition(
+            key="user_id",
+            match=MatchValue(value=str(user_info.id)),
+        )
         result = await self.client.query_points_groups(
             collection_name=collection.collection_name,
             group_by="post_id",

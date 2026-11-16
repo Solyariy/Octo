@@ -32,7 +32,10 @@ class QdrantVector(BaseModel):
     def point_id(self) -> StrUUID:
         """Deterministic, so re-processing a post overwrites its points instead of duplicating."""
         return str(
-            uuid.uuid5(uuid.NAMESPACE_URL, f"{self.post_id}:{self.modality}:{self.media_index}")
+            uuid.uuid5(
+                uuid.NAMESPACE_URL,
+                f"{self.post_id}:{self.modality}:{self.media_index}",
+            )
         )
 
     def payload(self, user_id: StrUUID) -> dict:

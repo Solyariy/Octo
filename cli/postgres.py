@@ -16,7 +16,9 @@ async def create_admin(email: str, password: str) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create (or reset the password of) the admin user")
+    parser = argparse.ArgumentParser(
+        description="Create (or reset the password of) the admin user",
+    )
     parser.add_argument("--email", default="admin@octo.local")
     parser.add_argument("--password", default="admin")
     args = parser.parse_args()

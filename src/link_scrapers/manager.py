@@ -7,8 +7,8 @@ import aiohttp
 from src.enums import Platform, ProcessingStatus
 from src.link_scrapers.errors import ScraperStatusError
 from src.link_scrapers.schemas import ScrapedPost
-from src.link_scrapers.scrapers import instagram_graphql, threads
-from src.link_scrapers.scrapers.instagram_graphql import InstagramFetchError, ReelData
+from src.link_scrapers.scrapers import instagram_html, threads
+from src.link_scrapers.scrapers.instagram_common import InstagramFetchError, ReelData
 from src.link_scrapers.scrapers.threads import ThreadsFetchError, ThreadsPost
 from src.link_scrapers.settings import instagram_settings, threads_settings
 from src.utils.logs import LoggerMixin
@@ -105,7 +105,10 @@ class LinkScraper(LoggerMixin):
                 results[index] = e
                 remaining = batch[position + 1 :]
                 for skipped_index, _ in remaining:
-                    results[skipped_index] = ScraperStatusError(platform, f"aborted: {e.message}")
+                    results[skipped_index] = ScraperStatusError(
+                        platform,
+                        f"aborted: {e.message}",
+                    )
                 self.log_warning(
                     "Platform aborted",
                     platform=platform,
@@ -116,7 +119,11 @@ class LinkScraper(LoggerMixin):
             except Exception as e:
                 results[index] = e
 
-    async def _record_status(self, platform: Platform, status: ProcessingStatus) -> None:
+    async def _record_status(
+        self,
+        platform: Platform,
+        status: ProcessingStatus,
+    ) -> None:
         """Upsert `scraper_statuses`; a DB failure is logged and never masks the scrape result."""
         if self.pg_manager is None:
             return
@@ -132,7 +139,7 @@ class LinkScraper(LoggerMixin):
 
     async def scrap_instagram_reel(self, url: str) -> ReelData:
         try:
-            reel = await instagram_graphql.fetch_reel(url, session=self.aiohttp_client)
+            reel = await instagram_html.fetch_reel(url, session=self.aiohttp_client)
         except (InstagramFetchError, ScraperStatusError) as e:
             self.log_error(
                 "Instagram scrape failed",
@@ -143,6 +150,7 @@ class LinkScraper(LoggerMixin):
         self.log_info(
             "Scraped Instagram reel",
             shortcode=reel.shortcode,
+            source=reel.source,
             url=url,
         )
         return reel

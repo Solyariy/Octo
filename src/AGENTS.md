@@ -7,7 +7,7 @@
 ## Ownership
 
 - Owns `main.py` (FastAPI app, `lifespan`, uvicorn entrypoint), `settings.py` (`MainSettings`, `DBSettings`, `LOG_ID`) and `enums.py` (shared `StrEnum`s, e.g. `Platform`; `Platform.YOUTUBE` exists for `ScraperStatusError` only and is not accepted by `/save`)
-- Owns cross-package conventions listed below; delegates domain detail to `api/`, `db/`, `embedders/`, `link_scrapers/`, `services/`, `utils/`
+- Owns cross-package conventions listed below; delegates domain detail to `api/`, `db/`, `embedders/`, `link_scrapers/`, `recipe_parser/`, `services/`, `utils/`
 
 ## Local Contracts
 
@@ -15,11 +15,11 @@
 - `src` is an import package rooted at the repository root: always use absolute imports (`from src.utils.logs import LoggerMixin`), never relative
 - Modules are importable from the repository root with no `sys.path` manipulation. No CLI `main()`, `argparse` or `__main__` blocks here except the server entrypoint in `main.py`; hand-run scripts go in `cli/` (see `cli/AGENTS.md`)
 - Configuration comes from pydantic-settings classes reading `.env`; secrets are never hardcoded. `MainSettings` has no defaults for `HF_AUTH_TOKEN`, `SECRET_KEY`, `ALGORITHM` and `ACCESS_TOKEN_EXPIRE_MINUTES`, so importing `src.settings` fails without a `.env` supplying all four
-- `MODELS_PATH` (default `<repo>/models`) is the only on-disk model cache location; resolve paths through `src.utils.order.get_model_path`. Scratch files go under `TEMP_DIR_PATH` (`<repo>/temp`, gitignored); `INSTAGRAM_TEMP_DIR_PATH` (`temp/instagram`), `THREADS_TEMP_DIR_PATH` (`temp/threads`) and `YOUTUBE_TEMP_DIR_PATH` (`temp/youtube`) are the per-platform scratch subfolders
+- `MODELS_PATH` (default `<repo>/models`) is the only on-disk model cache location; resolve paths through `src.utils.order.get_model_path`. Scratch files go under `TEMP_DIR_PATH` (`<repo>/temp`, gitignored); `INSTAGRAM_TEMP_DIR_PATH` (`temp/instagram`), `THREADS_TEMP_DIR_PATH` (`temp/threads`) and `YOUTUBE_TEMP_DIR_PATH` (`temp/youtube`) are the per-platform scratch subfolders; `RECIPES_TEMP_DIR_PATH` (`temp/recipes`) holds recipe-benchmark media, stage caches and runs
 - `main.py` declares no routes: it includes `src.api.router.main_router` and owns process-wide startup/shutdown
 - `lifespan` is the single owner of every connection. It drives an `AsyncExitStack` so resources unwind in reverse order on any failure — including one raised out of `yield` — and publishes five entries on `app.state`: `postgres_engine`, `postgres_sessionmaker`, `qdrant_client`, `aiohttp_client`, `embedder`. Datastore packages must expose an async CM to enter here, never a connected client at import time
 - Logging goes through `src.utils.logs`, never `print` or bare `logging`
-- New dependencies must be added to `pyproject.toml`; `transformers>=5.18` (4.x only in `.venv-cosmos`) and `torchcodec` must stay uninstalled (reasons in `embedders/AGENTS.md`)
+- New dependencies must be added to `pyproject.toml`; `transformers>=5.18` (4.x only in `.venv-cosmos`) and `torchcodec` must stay uninstalled (reasons in `embedders/AGENTS.md`); the torchcodec rule binds `recipe_parser/` too. Apple-only packages (mlx-lm, mlx-vlm, mlx-whisper) live in the darwin-marked `mlx` dependency group and are imported lazily
 
 ## Work Guidance
 
@@ -38,5 +38,6 @@
 - `db/AGENTS.md` — shared datastore rules; delegates to `db/postgres/AGENTS.md` and `db/qdrant/AGENTS.md`
 - `embedders/AGENTS.md` — embedding model registry, backend managers, manual model checks
 - `link_scrapers/AGENTS.md` — resolving social-media URLs (Instagram, Threads; standalone YouTube scraper) to fetchable media
+- `recipe_parser/AGENTS.md` — cooking reel → English recipe JSON (caption gate, Whisper, keyframe OCR, SLM with JSON retries) and the model benchmark
 - `services/AGENTS.md` — `OmniPipeline`, the post-processing flow behind `POST /process/all` and task retries
 - `utils/AGENTS.md` — logging, type annotations, download and video helpers

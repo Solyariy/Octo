@@ -58,17 +58,18 @@ ifneq ($(filter qdrant,$(DB_RESET_STORES)),)
 	$(COMPOSE) up --detach --wait qdrant
 endif
 
-# `make cli <instagram|threads|link|youtube> "<url>" [args="--out raw.json"]` runs the matching scraper smoke script
-CLI_MODULE_instagram := cli.instagram_graphql
+# `make cli <instagram|instagram_graphql|threads|link|youtube> "<url>" [args="--out raw.json"]` runs the matching scraper smoke script
+CLI_MODULE_instagram := cli.instagram_html
+CLI_MODULE_instagram_graphql := cli.instagram_graphql
 CLI_MODULE_threads := cli.threads
 CLI_MODULE_link := cli.link_scraper
 CLI_MODULE_youtube := cli.youtube
 CLI_PLATFORM := $(word 2,$(MAKECMDGOALS))
 CLI_URL := $(wordlist 3,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 
-cli: ## Run a scraper script: make cli <instagram|threads|link|youtube> "<url>" [args=...]
+cli: ## Run a scraper script: make cli <instagram|instagram_graphql|threads|link|youtube> "<url>" [args=...]
 	@test -n "$(CLI_MODULE_$(CLI_PLATFORM))" && test -n "$(CLI_URL)" || \
-		{ echo 'usage: make cli <instagram|threads|link|youtube> "<url>" [args="--out raw.json"]'; exit 1; }
+		{ echo 'usage: make cli <instagram|instagram_graphql|threads|link|youtube> "<url>" [args="--out raw.json"]'; exit 1; }
 	uv run python -m $(CLI_MODULE_$(CLI_PLATFORM)) '$(CLI_URL)' $(args)
 
 # The platform and url are arguments for `make cli`, not standalone targets

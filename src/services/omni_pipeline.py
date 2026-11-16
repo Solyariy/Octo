@@ -328,7 +328,11 @@ class OmniPipeline(LoggerMixin):
     # --- helpers --------------------------------------------------------------------------
 
     @asynccontextmanager
-    async def _stage(self, stage: PipelineStage, jobs: list[PostJob]) -> AsyncIterator[None]:
+    async def _stage(
+        self,
+        stage: PipelineStage,
+        jobs: list[PostJob],
+    ) -> AsyncIterator[None]:
         """Log the stage's span; a stage-wide exception fails every post still active."""
         active_before = len(self._active(jobs))
         started = time.perf_counter()

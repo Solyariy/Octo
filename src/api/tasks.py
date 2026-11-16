@@ -54,7 +54,10 @@ async def get_task(
     """One task with every post and its outcome (status, failed stage, error) in this task."""
     task = await pg_manager.get_task_detail(user_id=user_info.id, task_id=task_id)
     if task is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=TASK_NOT_FOUND)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=TASK_NOT_FOUND,
+        )
     return task
 
 
@@ -75,7 +78,10 @@ async def retry_task(
     """Re-run the task's posts that failed and are still `FAILED`, as a new task."""
     task = await pg_manager.get_task(user_id=user_info.id, task_id=task_id)
     if task is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=TASK_NOT_FOUND)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=TASK_NOT_FOUND,
+        )
     if task.status != ProcessingStatus.FAILED:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

@@ -50,7 +50,10 @@ async def init_qdrant_collections(client: AsyncQdrantClient) -> None:
         await _ensure_collection(client, collection)
 
 
-async def _ensure_collection(client: AsyncQdrantClient, collection: QdrantCollection) -> None:
+async def _ensure_collection(
+    client: AsyncQdrantClient,
+    collection: QdrantCollection,
+) -> None:
     if not await client.collection_exists(collection.collection_name):
         try:
             # Pass vectors_config as the model, never **collection.model_dump():
@@ -60,7 +63,10 @@ async def _ensure_collection(client: AsyncQdrantClient, collection: QdrantCollec
                 collection_name=collection.collection_name,
                 vectors_config=collection.vectors_config,
             )
-            Logger.info("Created Qdrant collection", collection=collection.collection_name)
+            Logger.info(
+                "Created Qdrant collection",
+                collection=collection.collection_name,
+            )
             await _ensure_payload_indexes(client, collection)
             return
         except (UnexpectedResponse, RpcError):
@@ -78,7 +84,10 @@ async def _ensure_collection(client: AsyncQdrantClient, collection: QdrantCollec
     await _ensure_payload_indexes(client, collection)
 
 
-async def _ensure_payload_indexes(client: AsyncQdrantClient, collection: QdrantCollection) -> None:
+async def _ensure_payload_indexes(
+    client: AsyncQdrantClient,
+    collection: QdrantCollection,
+) -> None:
     """Create every `PAYLOAD_INDEXES` entry the collection lacks; additive, never drops one.
 
     Runs for existing collections too, so a field added to the registry gets indexed on the

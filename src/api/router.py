@@ -71,7 +71,10 @@ async def post_process_all(
     embedder: EmbedderDep,
 ) -> ProcessingAccepted:
     log_id = get_log_id()
-    task_id, posts = await pg_manager.claim_pending_posts(user_id=user_info.id, request_id=log_id)
+    task_id, posts = await pg_manager.claim_pending_posts(
+        user_id=user_info.id,
+        request_id=log_id,
+    )
     accepted = ProcessingAccepted(
         log_id=log_id,
         task_id=str(task_id) if task_id else None,
@@ -112,7 +115,10 @@ async def get_post(
     post = await pg_manager.get_post(user_id=user_info.id, post_id=post_id)
     if post is None:
         # Same answer for "missing" and "someone else's", so ids leak nothing.
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found",
+        )
     return post
 
 

@@ -92,7 +92,9 @@ async def resolve_shortcode(url_or_code: str, session: aiohttp.ClientSession) ->
             raise ScraperStatusError(Platform.THREADS, "rate limited (429)")
         location = response.headers.get("location")
         if response.status not in (301, 302, 303, 307, 308) or not location:
-            raise ThreadsFetchError(f"Share link {url_or_code!r} did not redirect to a post")
+            raise ThreadsFetchError(
+                f"Share link {url_or_code!r} did not redirect to a post",
+            )
     return extract_shortcode(location)
 
 

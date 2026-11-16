@@ -13,7 +13,7 @@ import aiohttp
 
 from src.link_scrapers.errors import ScraperStatusError
 from src.link_scrapers.manager import LinkScraper, UnsupportedLinkError
-from src.link_scrapers.scrapers.instagram_graphql import InstagramFetchError
+from src.link_scrapers.scrapers.instagram_common import InstagramFetchError
 from src.link_scrapers.scrapers.threads import ThreadsFetchError
 
 

@@ -49,7 +49,10 @@ def download_video(url: str, destination: Path) -> Path:
 
 
 def main() -> int:
-    video_path = download_video(VIDEO_URL, Path(tempfile.gettempdir()) / "javelin_throw.webm")
+    video_path = download_video(
+        VIDEO_URL,
+        Path(tempfile.gettempdir()) / "javelin_throw.webm",
+    )
 
     with get_embedding_manager(EmbeddersEnum.COSMOS_EMBED1_448P) as manager:
         video_embeddings = manager.encode_video([video_path])

@@ -11,7 +11,8 @@
 - `annotations.py` — `StrUUID`, `LocalFilePath`, `Timestamp` pydantic-annotated `NewType`s
 - `basic.py` — `download_file` and `download_and_save_file`, aiohttp downloads that stream to disk with aiofiles
 - `models.py` — `pick_device`, the torch device/dtype choice shared by every model backend
-- `video.py` — `sample_frames` (PyAV frame sampling) and `video_duration` (stream length in seconds) for video models
+- `video.py` — `sample_frames` (PyAV frame sampling), `sample_keyframes` (fps sampling as PIL images, near-duplicate frames dropped by 64x64 grayscale diff, capped at `max_frames`) and `video_duration` (stream length in seconds) for video models
+- `audio.py` — `load_audio`, PyAV decode of the first audio stream to mono float32 at 16 kHz (`SPEECH_SAMPLE_RATE`); empty array when there is no audio stream
 - `tenacity_logs.py` — `tenacity_log_before` / `tenacity_log_before_sleep` / `tenacity_log_after`, tenacity retry hooks that log each attempt through `Logger`
 
 ## Local Contracts
@@ -23,7 +24,7 @@
 - `Logger` methods are wrapped by `inject_traceback`, which walks the caller frame to attach `(file, line)` — any new log level must keep the `increase_depth` contract or locations will point at the wrong frame
 - `Logger.error` always attaches `traceback.format_exc()`, so call it from inside an `except` block
 - Every log line carries `log_id` from `get_log_id()`, the only writer of the `LOG_ID` ContextVar defined in `src.settings`: when the var is unset in the current context it generates a UUID and sets it. `src.api.middleware.trace_requests` logs before calling the route, so the id is bound in the request's context and its logs, background tasks and `to_thread` work share it. Outside a request (CLI scripts) the first log line binds one id for the whole run
-- `models.py` and `video.py` may import torch and PyAV, but must stay model-agnostic: no HuggingFace model ids, no manager classes
+- `models.py`, `video.py` and `audio.py` may import torch and PyAV, but must stay model-agnostic: no HuggingFace model ids, no manager classes
 
 ## Work Guidance
 

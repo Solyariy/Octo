@@ -77,7 +77,9 @@ class TaskPostPostgres(Base):
         primary_key=True,
         index=True,
     )
-    status: Mapped[ProcessingStatus] = mapped_column(default=ProcessingStatus.IN_PROCESS)
+    status: Mapped[ProcessingStatus] = mapped_column(
+        default=ProcessingStatus.IN_PROCESS,
+    )
     # `PipelineStage` value where the post failed; None unless `status` is FAILED.
     stage: Mapped[str | None]
     error: Mapped[str | None] = mapped_column(Text)

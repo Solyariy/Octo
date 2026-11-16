@@ -73,7 +73,10 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
         self.model = AutoModel.from_pretrained(self.embedder_info.value, **kwargs).to(
             self.device, dtype=self.dtype
         )
-        self.processor = AutoProcessor.from_pretrained(self.embedder_info.value, **kwargs)
+        self.processor = AutoProcessor.from_pretrained(
+            self.embedder_info.value,
+            **kwargs,
+        )
 
     def encode_text(self, texts: list[str], **kwargs) -> np.ndarray:
         self.load_model()
@@ -98,7 +101,9 @@ class CosmosEmbeddingManager(BaseEmbeddingManager):
             return sample_frames(video, self.num_frames)
         if isinstance(video, np.ndarray) and video.ndim == 4:
             return video
-        raise TypeError(f"Expected a video path or a THWC frame array, got {type(video).__name__}")
+        raise TypeError(
+            f"Expected a video path or a THWC frame array, got {type(video).__name__}",
+        )
 
     def unload(self) -> None:
         super().unload()

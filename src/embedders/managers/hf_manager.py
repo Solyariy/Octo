@@ -24,7 +24,10 @@ class GeneralEmbeddingManager(BaseEmbeddingManager):
         path = get_model_path(self.embedder_info.value)
         if os.path.isdir(path):
             self.log_info("Loading model from disk", path=str(path))
-            self.model = SentenceTransformer(str(path), **self.embedder_info.get_config())
+            self.model = SentenceTransformer(
+                str(path),
+                **self.embedder_info.get_config(),
+            )
         else:
             self.log_info("Downloading model from hub", model=self.embedder_info.value)
             self.model = self._download_and_save(path)

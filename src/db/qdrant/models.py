@@ -21,7 +21,10 @@ class QdrantCollection(BaseModel):
     embedder: EmbeddersEnum
 
 
-def _cosine_collection(name: RegisteredCollection, embedder: EmbeddersEnum) -> QdrantCollection:
+def _cosine_collection(
+    name: RegisteredCollection,
+    embedder: EmbeddersEnum,
+) -> QdrantCollection:
     return QdrantCollection(
         collection_name=name,
         embedder=embedder,
@@ -32,7 +35,10 @@ def _cosine_collection(name: RegisteredCollection, embedder: EmbeddersEnum) -> Q
 
 
 QDRANT_COLLECTIONS: tuple[QdrantCollection, ...] = (
-    _cosine_collection(RegisteredCollection.COSMOS_ZERO_VIDEO, EmbeddersEnum.COSMOS_EMBED1_448P),
+    _cosine_collection(
+        RegisteredCollection.COSMOS_ZERO_VIDEO,
+        EmbeddersEnum.COSMOS_EMBED1_448P,
+    ),
     _cosine_collection(RegisteredCollection.GEMMA2_OMNI, EmbeddersEnum.GEMMA2_OMNI),
 )
 
